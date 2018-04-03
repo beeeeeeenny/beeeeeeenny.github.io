@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+
+  <meta name="description" content="tornado http1connection实现解析"/>
+
+
+
+
+  <meta name="keywords" content="tornado, http1connection, Benny's Blog" />
+
+
+
+
+
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Benny's Blog">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.6.0" />
+
+
+
+<link rel="canonical" href="http://yoursite.com/post/tornado-src-analysis/tornado_http1connection/"/>
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.6.0" />
+
+
+
+
+
+
+  
+
+
+
+  <script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.1.1/av-min.js"></script>
+  <script id="leancloud">
+    AV.init({
+      appId: "I3IBDTb5HPIE4K6wc1piW6Vu-gzGzoHsz",
+      appKey: "7N8Br3x2qKVpf3T8JRVFfgp9"
+    });
+  </script>
+
+
+
+
+
+    <title> tornado http1connection实现解析 - Benny's Blog </title>
+  </head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">Benny's Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    
+      <a href="/">
+        <li class="mobile-menu-item">
+          
+          
+            首页
+          
+        </li>
+      </a>
+    
+      <a href="/archives/">
+        <li class="mobile-menu-item">
+          
+          
+            归档
+          
+        </li>
+      </a>
+    
+      <a href="/about">
+        <li class="mobile-menu-item">
+          
+          
+            关于
+          
+        </li>
+      </a>
+    
+  </ul>
+</nav>
+
+    <div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">Benny's Blog</a>
+</div>
+
+<nav class="site-navbar">
+  
+    <ul id="menu" class="menu">
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/">
+            
+            
+              首页
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/archives/">
+            
+            
+              归档
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/about">
+            
+            
+              关于
+            
+          </a>
+        </li>
+      
+    </ul>
+  
+</nav>
+
+      </header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content">
+            
+  
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          tornado http1connection实现解析
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-11-06
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/tornado源码解析/">tornado源码解析</a>
+            
+          </div>
+        
+        
+        <div class="post-visits"
+             data-url="/post/tornado-src-analysis/tornado_http1connection/"
+             data-title="tornado http1connection实现解析">
+            阅读次数
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+  <div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">文章目录</h2>
+    <div class="post-toc-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#tornado-http1connection"><span class="toc-text">tornado http1connection</span></a></li></ol>
+    </div>
+  </div>
+
+
+    <div class="post-content">
+      
+        <h2 id="tornado-http1connection"><a href="#tornado-http1connection" class="headerlink" title="tornado http1connection"></a>tornado http1connection</h2><p>tornado http1connection主要是对http协议进行了封装。</p>
+<a id="more"></a>
+<ul>
+<li><p><div id="start_serving"></div>tornado.http1connection.HTTP1ServerConnection.start_serving()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">start_serving</span><span class="params">(self, delegate)</span>:</span></span><br><span class="line">    <span class="comment"># 这里断言delegate是httputil.HTTPServerConnectionDelegate的实例</span></span><br><span class="line">    <span class="keyword">assert</span> isinstance(delegate, httputil.HTTPServerConnectionDelegate)</span><br><span class="line">    self._serving_future = self._server_request_loop(delegate)</span><br><span class="line">    self.stream.io_loop.add_future(self._serving_future,</span><br><span class="line">                                   <span class="keyword">lambda</span> f: f.result())</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>开始处理这个连接上的请求，在tornado.HTTPServer.handle_stream()中调用此方法，传入的参数为HTTPServer的实例，即delegate为HTTPServer实例，由于HTTPServer继承至httputil.HTTPServerConnectionDelegate，所以断言成功，程序开始执行self._server_request_loop()。</p>
+<ul>
+<li><p>tornado.http1connection.HTTP1ServerConnection._server_request_loop()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@gen.coroutine</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_server_request_loop</span><span class="params">(self, delegate)</span>:</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">            <span class="comment"># 初始化HTTP1Connection实例</span></span><br><span class="line">            conn = HTTP1Connection(self.stream, <span class="keyword">False</span>,</span><br><span class="line">                                   self.params, self.context)</span><br><span class="line">            <span class="comment"># 调用delegate的start_request处理连接请求</span></span><br><span class="line">            request_delegate = delegate.start_request(self, conn)</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                <span class="comment"># 读取http响应</span></span><br><span class="line">                ret = <span class="keyword">yield</span> conn.read_response(request_delegate)</span><br><span class="line">            <span class="keyword">except</span> (iostream.StreamClosedError,</span><br><span class="line">                    iostream.UnsatisfiableReadError):</span><br><span class="line">                <span class="keyword">return</span></span><br><span class="line">            <span class="keyword">except</span> _QuietException:</span><br><span class="line">                <span class="comment"># This exception was already logged.</span></span><br><span class="line">                conn.close()</span><br><span class="line">                <span class="keyword">return</span></span><br><span class="line">            <span class="keyword">except</span> Exception:</span><br><span class="line">                gen_log.error(<span class="string">"Uncaught exception"</span>, exc_info=<span class="keyword">True</span>)</span><br><span class="line">                conn.close()</span><br><span class="line">                <span class="keyword">return</span></span><br><span class="line">            <span class="comment"># 如果ret为false，则表示读取了完整的http响应</span></span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> ret:</span><br><span class="line">                <span class="keyword">return</span></span><br><span class="line">            <span class="keyword">yield</span> gen.moment</span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        delegate.on_close(self)v</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>方法中调用了delegate.start_request(self, conn)，即<a href="../tornado_httpserver#start_request">tornado.httpserver.HTTPServer.start_request()</a>，得到一个httputil.HTTPMessageDelegate实例，即request_delegate。接下来开始读取响应数据。</p>
+<ul>
+<li><p>tornado.http1connection.HTTP1Connection.read_response()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">read_response</span><span class="params">(self, delegate)</span>:</span></span><br><span class="line">    <span class="comment"># 判断是否需要解压缩数据</span></span><br><span class="line">    <span class="keyword">if</span> self.params.decompress:</span><br><span class="line">        delegate = _GzipMessageDelegate(delegate, self.params.chunk_size)</span><br><span class="line">    <span class="keyword">return</span> self._read_message(delegate)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>tornado.http1connection.HTTP1Connection._read_message()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@gen.coroutine</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_read_message</span><span class="params">(self, delegate)</span>:</span></span><br><span class="line">    need_delegate_close = <span class="keyword">False</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="comment"># 读取请求header数据，返回Future对象</span></span><br><span class="line">        header_future = self.stream.read_until_regex(</span><br><span class="line">            <span class="string">b"\r?\n\r?\n"</span>,</span><br><span class="line">            max_bytes=self.params.max_header_size)</span><br><span class="line">        <span class="comment"># 判断header_timeout是否为None，如果为None，则直接读取header_future数据</span></span><br><span class="line">        <span class="keyword">if</span> self.params.header_timeout <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">            header_data = <span class="keyword">yield</span> header_future</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                <span class="comment"># header超时实现</span></span><br><span class="line">                header_data = <span class="keyword">yield</span> gen.with_timeout(</span><br><span class="line">                    self.stream.io_loop.time() + self.params.header_timeout,</span><br><span class="line">                    header_future,</span><br><span class="line">                    io_loop=self.stream.io_loop,</span><br><span class="line">                    quiet_exceptions=iostream.StreamClosedError)</span><br><span class="line">            <span class="keyword">except</span> gen.TimeoutError:</span><br><span class="line">                self.close()</span><br><span class="line">                <span class="keyword">raise</span> gen.Return(<span class="keyword">False</span>)</span><br><span class="line">        <span class="comment"># 解析header信息，HTTP协议分为request-line、request-header、</span></span><br><span class="line">        <span class="comment"># request-body三个部分的。在查看各浏览器、服务器配置的时候往往将</span></span><br><span class="line">        <span class="comment"># request-line、request-header归为一类了</span></span><br><span class="line">        start_line, headers = self._parse_headers(header_data)</span><br><span class="line">        <span class="comment"># 判断是否作为客户端</span></span><br><span class="line">        <span class="keyword">if</span> self.is_client:</span><br><span class="line">            <span class="comment"># 如果作为客户端，则解析服务端响应起始行</span></span><br><span class="line">            start_line = httputil.parse_response_start_line(start_line)</span><br><span class="line">            self._response_start_line = start_line</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="comment"># 如果作为服务端，则解析客户端请求起始行</span></span><br><span class="line">            start_line = httputil.parse_request_start_line(start_line)</span><br><span class="line">            self._request_start_line = start_line</span><br><span class="line">            self._request_headers = headers</span><br><span class="line">        <span class="comment"># 判断是否能保持长链接，即Connection: keep_alive</span></span><br><span class="line">        self._disconnect_on_finish = <span class="keyword">not</span> self._can_keep_alive(</span><br><span class="line">            start_line, headers)</span><br><span class="line">        need_delegate_close = <span class="keyword">True</span></span><br><span class="line">        <span class="keyword">with</span> _ExceptionLoggingContext(app_log):</span><br><span class="line">            header_future = delegate.headers_received(start_line, headers)</span><br><span class="line">            <span class="keyword">if</span> header_future <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</span><br><span class="line">                <span class="keyword">yield</span> header_future</span><br><span class="line">        <span class="keyword">if</span> self.stream <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">            <span class="comment"># We've been detached.</span></span><br><span class="line">            need_delegate_close = <span class="keyword">False</span></span><br><span class="line">            <span class="keyword">raise</span> gen.Return(<span class="keyword">False</span>)</span><br><span class="line">        skip_body = <span class="keyword">False</span></span><br><span class="line">        <span class="keyword">if</span> self.is_client:</span><br><span class="line">            <span class="keyword">if</span> (self._request_start_line <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span> <span class="keyword">and</span></span><br><span class="line">                    self._request_start_line.method == <span class="string">'HEAD'</span>):</span><br><span class="line">                skip_body = <span class="keyword">True</span></span><br><span class="line">            code = start_line.code</span><br><span class="line">            <span class="keyword">if</span> code == <span class="number">304</span>:</span><br><span class="line">                <span class="comment"># 304 responses may include the content-length header</span></span><br><span class="line">                <span class="comment"># but do not actually have a body.</span></span><br><span class="line">                <span class="comment"># http://tools.ietf.org/html/rfc7230#section-3.3</span></span><br><span class="line">                skip_body = <span class="keyword">True</span></span><br><span class="line">            <span class="keyword">if</span> code &gt;= <span class="number">100</span> <span class="keyword">and</span> code &lt; <span class="number">200</span>:</span><br><span class="line">                <span class="comment"># 1xx responses should never indicate the presence of</span></span><br><span class="line">                <span class="comment"># a body.</span></span><br><span class="line">                <span class="keyword">if</span> (<span class="string">'Content-Length'</span> <span class="keyword">in</span> headers <span class="keyword">or</span></span><br><span class="line">                        <span class="string">'Transfer-Encoding'</span> <span class="keyword">in</span> headers):</span><br><span class="line">                    <span class="keyword">raise</span> httputil.HTTPInputError(</span><br><span class="line">                        <span class="string">"Response code %d cannot have body"</span> % code)</span><br><span class="line">                <span class="comment"># <span class="doctag">TODO:</span> client delegates will get headers_received twice</span></span><br><span class="line">                <span class="comment"># in the case of a 100-continue.  Document or change?</span></span><br><span class="line">                <span class="keyword">yield</span> self._read_message(delegate)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">if</span> (headers.get(<span class="string">"Expect"</span>) == <span class="string">"100-continue"</span> <span class="keyword">and</span></span><br><span class="line">                    <span class="keyword">not</span> self._write_finished):</span><br><span class="line">                self.stream.write(<span class="string">b"HTTP/1.1 100 (Continue)\r\n\r\n"</span>)</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> skip_body:</span><br><span class="line">            body_future = self._read_body(</span><br><span class="line">                start_line.code <span class="keyword">if</span> self.is_client <span class="keyword">else</span> <span class="number">0</span>, headers, delegate)</span><br><span class="line">            <span class="keyword">if</span> body_future <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</span><br><span class="line">                <span class="keyword">if</span> self._body_timeout <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">                    <span class="keyword">yield</span> body_future</span><br><span class="line">                <span class="keyword">else</span>:</span><br><span class="line">                    <span class="keyword">try</span>:</span><br><span class="line">                        <span class="keyword">yield</span> gen.with_timeout(</span><br><span class="line">                            self.stream.io_loop.time() + self._body_timeout,</span><br><span class="line">                            body_future, self.stream.io_loop,</span><br><span class="line">                            quiet_exceptions=iostream.StreamClosedError)</span><br><span class="line">                    <span class="keyword">except</span> gen.TimeoutError:</span><br><span class="line">                        gen_log.info(<span class="string">"Timeout reading body from %s"</span>,</span><br><span class="line">                                     self.context)</span><br><span class="line">                        self.stream.close()</span><br><span class="line">                        <span class="keyword">raise</span> gen.Return(<span class="keyword">False</span>)</span><br><span class="line">        self._read_finished = <span class="keyword">True</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> self._write_finished <span class="keyword">or</span> self.is_client:</span><br><span class="line">            need_delegate_close = <span class="keyword">False</span></span><br><span class="line">            <span class="keyword">with</span> _ExceptionLoggingContext(app_log):</span><br><span class="line">                delegate.finish()</span><br><span class="line">        <span class="comment"># If we're waiting for the application to produce an asynchronous</span></span><br><span class="line">        <span class="comment"># response, and we're not detached, register a close callback</span></span><br><span class="line">        <span class="comment"># on the stream (we didn't need one while we were reading)</span></span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">not</span> self._finish_future.done() <span class="keyword">and</span></span><br><span class="line">                self.stream <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span> <span class="keyword">and</span></span><br><span class="line">                <span class="keyword">not</span> self.stream.closed()):</span><br><span class="line">            self.stream.set_close_callback(self._on_connection_close)</span><br><span class="line">            <span class="keyword">yield</span> self._finish_future</span><br><span class="line">        <span class="keyword">if</span> self.is_client <span class="keyword">and</span> self._disconnect_on_finish:</span><br><span class="line">            self.close()</span><br><span class="line">        <span class="keyword">if</span> self.stream <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">            <span class="keyword">raise</span> gen.Return(<span class="keyword">False</span>)</span><br><span class="line">    <span class="keyword">except</span> httputil.HTTPInputError <span class="keyword">as</span> e:</span><br><span class="line">        gen_log.info(<span class="string">"Malformed HTTP message from %s: %s"</span>,</span><br><span class="line">                     self.context, e)</span><br><span class="line">        self.close()</span><br><span class="line">        <span class="keyword">raise</span> gen.Return(<span class="keyword">False</span>)</span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        <span class="keyword">if</span> need_delegate_close:</span><br><span class="line">            <span class="keyword">with</span> _ExceptionLoggingContext(app_log):</span><br><span class="line">                delegate.on_connection_close()</span><br><span class="line">        header_future = <span class="keyword">None</span></span><br><span class="line">        self._clear_callbacks()</span><br><span class="line">    <span class="keyword">raise</span> gen.Return(<span class="keyword">True</span>)</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>重要方法，首先会调用stream的read_until_regex方法开始读取客户端请求传入的头数据（http协议的header），返回一个Future对象，即header_future，详解参考：<a href="../tornado_iostream#read_until_regex">tornado iostream解析</a>；接着会判断是否有设置header_timeout，而在该方法中，默认是3600秒，则开始请求头超时机制设计，详解参考：<a href="../tornado_gen#with_timeout">tornado gen解析</a>；</p>
+
+      
+    </div>
+
+    
+      
+      
+
+
+
+      
+      
+    
+
+    
+      <footer class="post-footer">
+        
+          <div class="post-tags">
+            
+              <a href="/tags/tornado/">tornado</a>
+            
+              <a href="/tags/http1connection/">http1connection</a>
+            
+          </div>
+        
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/post/tornado-src-analysis/tornado_iostream/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">tornado iostream实现解析</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+    
+    
+      <a class="next" href="/post/tornado-src-analysis/tornado_netutil/">
+        <span class="next-text nav-default">tornado netutil实现解析</span>
+        <span class="prev-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+      </footer>
+    
+
+  </article>
+
+
+          </div>
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+      </main>
+
+      <footer id="footer" class="footer">
+
+  <div class="social-links">
+    
+      
+        
+          <a href="mailto:beeeeeeenny@gmail.com" class="iconfont icon-email" title="email"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+          <a href="https://github.com/beeeeeeenny" class="iconfont icon-github" title="github"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    
+    
+      <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    
+  </div>
+
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://hexo.io/">Hexo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/ahonn/hexo-theme-even">Even</a>
+  </span>
+
+  <span class="copyright-year">
+    
+    &copy; 
+     
+      2017 - 
+    
+    2018
+
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">Beeeeeeenny</span>
+  </span>
+</div>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+
+    
+  
+  
+
+  
+
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  
+
+  
+
+
+    <script type="text/javascript" src="/js/src/even.js?v=2.6.0"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=2.6.0"></script>
+
+  </body>
+</html>

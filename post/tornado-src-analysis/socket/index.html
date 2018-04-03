@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+
+  <meta name="description" content="Socket详解"/>
+
+
+
+
+  <meta name="keywords" content="socket, tcp/ip, Benny's Blog" />
+
+
+
+
+
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Benny's Blog">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.6.0" />
+
+
+
+<link rel="canonical" href="http://yoursite.com/post/tornado-src-analysis/socket/"/>
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.6.0" />
+
+
+
+
+
+
+  
+
+
+
+  <script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.1.1/av-min.js"></script>
+  <script id="leancloud">
+    AV.init({
+      appId: "I3IBDTb5HPIE4K6wc1piW6Vu-gzGzoHsz",
+      appKey: "7N8Br3x2qKVpf3T8JRVFfgp9"
+    });
+  </script>
+
+
+
+
+
+    <title> Socket详解 - Benny's Blog </title>
+  </head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">Benny's Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    
+      <a href="/">
+        <li class="mobile-menu-item">
+          
+          
+            首页
+          
+        </li>
+      </a>
+    
+      <a href="/archives/">
+        <li class="mobile-menu-item">
+          
+          
+            归档
+          
+        </li>
+      </a>
+    
+      <a href="/about">
+        <li class="mobile-menu-item">
+          
+          
+            关于
+          
+        </li>
+      </a>
+    
+  </ul>
+</nav>
+
+    <div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">Benny's Blog</a>
+</div>
+
+<nav class="site-navbar">
+  
+    <ul id="menu" class="menu">
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/">
+            
+            
+              首页
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/archives/">
+            
+            
+              归档
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/about">
+            
+            
+              关于
+            
+          </a>
+        </li>
+      
+    </ul>
+  
+</nav>
+
+      </header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content">
+            
+  
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          Socket详解
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-08-24
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/tornado源码解析/">tornado源码解析</a>
+            
+          </div>
+        
+        
+        <div class="post-visits"
+             data-url="/post/tornado-src-analysis/socket/"
+             data-title="Socket详解">
+            阅读次数
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+  <div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">文章目录</h2>
+    <div class="post-toc-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#socket"><span class="toc-text">socket</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#TCP三次握手、四次挥手"><span class="toc-text">TCP三次握手、四次挥手</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#socket实例"><span class="toc-text">socket实例</span></a></li></ol>
+    </div>
+  </div>
+
+
+    <div class="post-content">
+      
+        <h2 id="socket"><a href="#socket" class="headerlink" title="socket"></a>socket</h2><ol>
+<li>socket是网络进程之间的通讯方式，是对TCP/IP协议的封装。socket并不是像HTTP、TCP、IP一样的协议，而是一组调用接口（API）。通过socket，可以使用TCP/IP协议，即可以在网络上传输数据。</li>
+</ol>
+<a id="more"></a>
+<ol start="2">
+<li>http是应用层协议，web开发中最常见的协议。当我们在浏览器输入一个网址，比如<a href="http://www.google.com" target="_blank" rel="noopener">http://www.google.com</a>时:<ul>
+<li>浏览器首先会去查看本地hosts文件，通过域名（google.com）获取其对应的IP地址，如果本地没有找到，则继续向上层请求DNS服务器，DNS服务器就像一个树结构，一层一层的向上递进查找。</li>
+<li>获取IP地址之后，浏览器会根据IP与默认端口80，通过TCP协议三次握手与服务器建立socket连接。</li>
+<li>在linux下，一切皆文件。系统将每一个socket连接也抽象成一个文件，客户端与服务器建立连接之后，各自在本地进程中维护一个文件，然后可以向自己文件写入内容供对方读取或者读取对方内容，通讯结束时关闭文件。</li>
+</ul>
+</li>
+</ol>
+<h2 id="TCP三次握手、四次挥手"><a href="#TCP三次握手、四次挥手" class="headerlink" title="TCP三次握手、四次挥手"></a>TCP三次握手、四次挥手</h2><ul>
+<li><p><strong>TCP连接到断开过程：</strong></p>
+  <div align="center"><img src="/images/tornado-src-analysis/tcp.jpg" alignwidth="700" height="700" alt="tcp连接过程"></div>
+
+<ul>
+<li><p>三次握手：</p>
+<p>  第一次握手：客户端尝试连接服务器，向服务器发送syn包（同步序列编号Synchronize Sequence Numbers），syn=j，客户端进入SYN_SEND状态等待服务器确认；</p>
+<p>  第二次握手：服务器接收客户端syn包并确认（ack=j+1），同时向客户端发送一个SYN包（syn=k），即SYN+ACK包，此时服务器进入SYN_RECV状态；此时，内核将连接（socket）放入SYN QUEUE，即 <strong><em>未完成队列</em></strong> ，该队列大小由/proc/sys/net/ipv4/tcp_max_syn_backlog设定；</p>
+<p>  第三次握手：客户端收到服务器的SYN+ACK包，向服务器发送确认包ACK(ack=k+1），此包发送完毕，客户端和服务器进入ESTABLISHED状态，完成三次握手。此时，内核将连接（socket）移到ACCEPT QUEUE，即 <strong><em>已完成队列</em></strong> ，队列大小为socket listen(backlog)函数传入的backlog参数与/proc/sys/net/core/somaxconn决定，取二者最小值。服务器程序调用accept函数后，该连接（socket）被内核从已完成队列移除，并交由服务器程序控制。</p>
+<p>  <strong><em>注意</em></strong> : TCP三次握手在应用程序调用accept函数之前由内核完成。调用accept只是获取已经完成的连接。</p>
+</li>
+<li><p>四次挥手</p>
+<p>  第一次挥手：主机1（可以是客户端，也可以是服务器端），设置Sequence Number和Acknowledgment Number，向主机2发送一个FIN报文段；此时，主机1进入FIN_WAIT_1状态；这表示主机1没有数据要发送给主机2了；</p>
+<p>  第二次挥手：主机2收到了主机1发送的FIN报文段，向主机1回一个ACK报文段，Acknowledgment Number为Sequence Number加1；主机1进入FIN_WAIT_2状态；主机2告诉主机1，我“同意”你的关闭请求；</p>
+<p>  第三次挥手：主机2向主机1发送FIN报文段，请求关闭连接，同时主机2进入LAST_ACK状态；</p>
+<p>  第四次挥手：主机1收到主机2发送的FIN报文段，向主机2发送ACK报文段，然后主机1进入TIME_WAIT状态；主机2收到主机1的ACK报文段以后，就关闭连接；此时，主机1等待2MSL后依然没有收到回复，则证明Server端已正常关闭，那么，主机1也可以关闭连接了</p>
+</li>
+</ul>
+</li>
+<li><p><strong>client状态过程：</strong></p>
+ <div align="center"><img src="/images/tornado-src-analysis/client-status.png" alignwidth="600" height="600" alt="tcp连接过程"></div>
+</li>
+<li><p><strong>server状态过程：</strong></p>
+ <div align="center"><img src="/images/tornado-src-analysis/server-status.png" alignwidth="600" height="600" alt="tcp连接过程"></div>
+
+</li>
+</ul>
+<h2 id="socket实例"><a href="#socket实例" class="headerlink" title="socket实例"></a>socket实例</h2><ul>
+<li><p>server.py</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> socket</span><br><span class="line"><span class="keyword">import</span> StringIO</span><br><span class="line"></span><br><span class="line">HOST = <span class="string">"127.0.0.1"</span></span><br><span class="line">PORT = <span class="number">3267</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建一个IPV4且基于TCP协议的socket对象</span></span><br><span class="line">server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)</span><br><span class="line"><span class="comment"># 绑定监听端口</span></span><br><span class="line">server.bind((HOST, PORT))</span><br><span class="line"><span class="comment"># 开始监听端口，并且等待连接的最大数量为5</span></span><br><span class="line">server.listen(<span class="number">5</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">print</span> <span class="string">"waiting for connection..."</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">    <span class="comment"># 接受连接（此方法阻塞）</span></span><br><span class="line">    conn, addr = server.accept()</span><br><span class="line">    <span class="keyword">print</span> <span class="string">"Connected by "</span>, addr</span><br><span class="line">    </span><br><span class="line">    buffer = StringIO.StringIO()</span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">        <span class="comment"># 每次最多读取1k数据</span></span><br><span class="line">        data = conn.recv(<span class="number">1024</span>)</span><br><span class="line">        <span class="keyword">if</span> data:</span><br><span class="line">            <span class="keyword">print</span> <span class="string">"receive client data: "</span>, data</span><br><span class="line">            buffer.write(data)</span><br><span class="line">            conn.sendall(<span class="string">"Hello, &#123;&#125;"</span>.format(data))</span><br><span class="line">        <span class="keyword">else</span>: </span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        </span><br><span class="line">    <span class="keyword">print</span> <span class="string">"receive client ALL datas: "</span>, buffer.getvalue()</span><br><span class="line">    buffer.close()</span><br><span class="line">    conn.close()</span><br><span class="line">    <span class="keyword">print</span> <span class="string">'Connection from %s:%s closed.'</span> % addr</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>client.py</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> socket</span><br><span class="line"></span><br><span class="line">HOST = <span class="string">"127.0.0.1"</span></span><br><span class="line">PORT = <span class="number">3267</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建一个IPV4且基于TCP协议的socket对象</span></span><br><span class="line">client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)</span><br><span class="line"><span class="comment"># 建立连接</span></span><br><span class="line">client.connect((HOST, PORT))</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="comment"># 获取用户控制台输入</span></span><br><span class="line">        data = raw_input(<span class="string">"please input something: "</span>)</span><br><span class="line">    <span class="keyword">except</span>:</span><br><span class="line">        <span class="comment"># 关闭客户端连接</span></span><br><span class="line">        client.close()</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line">    client.send(data)</span><br><span class="line">    result = client.recv(<span class="number">1024</span>)</span><br><span class="line">    <span class="keyword">print</span> <span class="string">"client result: "</span>, result</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>运行过程：</p>
+<ol>
+<li>运行server.py文件，系统进程会启动一个本地socket，该socket会一直循环等待客户端socket的连接。</li>
+<li>当我们运行client.py文件后，客户端会与服务端建立连接。此时，客户端文件会读取用户在控制台的输入数据，然后发送给服务器。</li>
+</ol>
+</li>
+<li><p>问题：<br>  当多开一个控制台再次运行client.py时,此时是无法与服务器建立连接的。因为该程序是单线程的，也就是同一时间服务器只能被一个客户端连接。</p>
+</li>
+<li><p>传统解决方法：<br>  传统解决方式就是多线程，一个客户端连接开启一个线程去处理。修改后的server.py如下：</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> socket</span><br><span class="line"><span class="keyword">import</span> StringIO</span><br><span class="line"><span class="keyword">import</span> threading</span><br><span class="line"></span><br><span class="line">HOST = <span class="string">"127.0.0.1"</span></span><br><span class="line">PORT = <span class="number">3267</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建一个IPV4且基于TCP协议的socket对象</span></span><br><span class="line">server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)</span><br><span class="line"><span class="comment"># 绑定监听端口</span></span><br><span class="line">server.bind((HOST, PORT))</span><br><span class="line"><span class="comment"># 开始监听端口，并且等待连接的最大数量为5</span></span><br><span class="line">server.listen(<span class="number">5</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">print</span> <span class="string">"waiting for connection..."</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">handle_conn</span><span class="params">(conn, addr)</span>:</span></span><br><span class="line">    buffer = StringIO.StringIO()</span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">        <span class="comment"># 每次最多读取1k数据</span></span><br><span class="line">        data = conn.recv(<span class="number">1024</span>)</span><br><span class="line">        <span class="keyword">if</span> data:</span><br><span class="line">            <span class="keyword">print</span> <span class="string">"receive client data: "</span>, data</span><br><span class="line">            buffer.write(data)</span><br><span class="line">            conn.sendall(<span class="string">"Hello, &#123;&#125;"</span>.format(data))</span><br><span class="line">        <span class="keyword">else</span>: </span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        </span><br><span class="line">    <span class="keyword">print</span> <span class="string">"receive client ALL datas: "</span>, buffer.getvalue()</span><br><span class="line">    buffer.close()</span><br><span class="line">    conn.close()</span><br><span class="line">    <span class="keyword">print</span> <span class="string">'Connection from %s:%s closed.'</span> % addr</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">    <span class="comment"># 接受连接（此方法阻塞）</span></span><br><span class="line">    conn, addr = server.accept()</span><br><span class="line">    <span class="keyword">print</span> <span class="string">"Connected by "</span>, addr</span><br><span class="line">    </span><br><span class="line">    threading.Thread(target=handle_conn, args=(conn, addr)).start()</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>优化解决方法：<br>  传统解决方法显然不现实，无法承受高并发、高访问量，线程对资源的消耗太大。为解决此问题，引入新概念：<a href="../io_multiplexing">IO多路复用</a>（Linux下select/poll/epoll），即事件驱动，所谓的Reactor模式。它实现了单线程连接多客户端。使用epoll实现server.py：</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> socket</span><br><span class="line"><span class="keyword">import</span> StringIO</span><br><span class="line"><span class="keyword">import</span> select</span><br><span class="line"></span><br><span class="line">HOST = <span class="string">"127.0.0.1"</span></span><br><span class="line">PORT = <span class="number">3267</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建一个IPV4且基于TCP协议的socket对象</span></span><br><span class="line">server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)</span><br><span class="line"><span class="comment"># 绑定监听端口</span></span><br><span class="line">server.bind((HOST, PORT))</span><br><span class="line"><span class="comment"># 开始监听端口，并且等待连接的最大数量为5</span></span><br><span class="line">server.listen(<span class="number">5</span>)</span><br><span class="line"><span class="comment"># 设置非阻塞</span></span><br><span class="line">server.setblocking(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 获取epoll对象</span></span><br><span class="line">epoll = select.epoll()</span><br><span class="line"><span class="comment"># 向epoll中注册服务器socket描述符，监听读事件</span></span><br><span class="line">epoll.register(server.fileno(), select.EPOLLIN)</span><br><span class="line"></span><br><span class="line"><span class="keyword">print</span> <span class="string">"waiting for connection..."</span></span><br><span class="line"></span><br><span class="line">connections = &#123;&#125;</span><br><span class="line">requests = &#123;&#125;</span><br><span class="line">responses = &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">    <span class="comment"># 当监听的socket文件描述符发生改变则会以列表的形式主动报告给用户进程（阻塞）</span></span><br><span class="line">    <span class="comment"># timeout为获取结果的时间（秒） 当timeout等于-1的时永远等待(默认就是-1)直</span></span><br><span class="line">    <span class="comment"># 到文件描述符发生改变，如果指定为1那么epoll每1秒进行汇报一次当前文件描述符</span></span><br><span class="line">    <span class="comment"># 的状态哪怕是没有文件描述符发生改变也会返回一个空值</span></span><br><span class="line">    events = epoll.poll(<span class="number">-1</span>)</span><br><span class="line">    <span class="comment"># 循环发生改变的socket，返回的每个对象都是一个元组：(socket描述符, 监听的事件)</span></span><br><span class="line">    <span class="keyword">for</span> fileno, event <span class="keyword">in</span> events:</span><br><span class="line">        <span class="comment"># 判断是否为服务器socket描述符，如果是则为第一个连接</span></span><br><span class="line">        <span class="keyword">if</span> fileno == server.fileno():</span><br><span class="line">            <span class="comment"># 接受连接（此方法阻塞），每一次与客户端建立连接都会创建一个socket，即下面的conn</span></span><br><span class="line">            conn, addr = server.accept()</span><br><span class="line">            <span class="keyword">print</span> <span class="string">"Connected by "</span>, addr</span><br><span class="line">            </span><br><span class="line">            conn_fd = conn.fileno()</span><br><span class="line">            <span class="comment"># 设置socket连接为非阻塞</span></span><br><span class="line">            conn.setblocking(<span class="number">0</span>)</span><br><span class="line">            <span class="comment"># 将socket连接注册到epoll，监听读事件</span></span><br><span class="line">            epoll.register(conn_fd, select.EPOLLIN)</span><br><span class="line">            <span class="comment"># 保存所有连接</span></span><br><span class="line">            connections[conn_fd] = (conn, addr)</span><br><span class="line">        <span class="comment"># 判断是否为断开事件</span></span><br><span class="line">        <span class="keyword">elif</span> event &amp; select.EPOLLHUP:</span><br><span class="line">            <span class="comment"># 解除epoll对socket的监听</span></span><br><span class="line">            epoll.unregister(fileno)</span><br><span class="line">            <span class="comment"># 关闭socket连接</span></span><br><span class="line">            connections[fileno][<span class="number">0</span>].close()</span><br><span class="line">            <span class="keyword">del</span> connections[fileno]</span><br><span class="line">            <span class="keyword">print</span> <span class="string">'Connection from %s:%s closed.'</span> % connections[fileno][<span class="number">1</span>]</span><br><span class="line">        <span class="comment"># 判断是否为读事件</span></span><br><span class="line">        <span class="keyword">elif</span> event &amp; select.EPOLLIN:</span><br><span class="line">            conn = connections[fileno][<span class="number">0</span>]</span><br><span class="line">            buffer = StringIO.StringIO()</span><br><span class="line">            <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">                <span class="keyword">try</span>:</span><br><span class="line">                    <span class="comment"># 每次最多读取1k数据</span></span><br><span class="line">                    data = conn.recv(<span class="number">1024</span>)</span><br><span class="line">                <span class="keyword">except</span> socket.error, e:</span><br><span class="line">                    <span class="comment"># import traceback</span></span><br><span class="line">                    <span class="comment"># print traceback.format_exc()</span></span><br><span class="line">                    <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> data:</span><br><span class="line">                    <span class="keyword">print</span> <span class="string">"receive client data: "</span>, data</span><br><span class="line">                    buffer.write(data)</span><br><span class="line">                    conn.sendall(<span class="string">"Hello, &#123;&#125;"</span>.format(data))</span><br><span class="line">                <span class="keyword">else</span>: </span><br><span class="line">                    <span class="keyword">break</span></span><br><span class="line">            <span class="keyword">print</span> <span class="string">"receive client ALL datas: "</span>, buffer.getvalue()</span><br><span class="line">            </span><br><span class="line">            requests[fileno] = buffer.getvalue().strip()</span><br><span class="line">            epoll.modify(fileno, select.EPOLLOUT)</span><br><span class="line">            buffer.close()</span><br><span class="line">        <span class="comment"># 判断是否为写事件</span></span><br><span class="line">        <span class="keyword">elif</span> event &amp; select.EPOLLOUT:</span><br><span class="line">            connections[fileno].send(requests[fileno])</span><br><span class="line">            <span class="comment"># 写事件完成之后将该socket从监听写事件改为监听读事件</span></span><br><span class="line">            epoll.modify(fileno, select.EPOLLIN)</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+
+      
+    </div>
+
+    
+      
+      
+
+
+
+      
+      
+    
+
+    
+      <footer class="post-footer">
+        
+          <div class="post-tags">
+            
+              <a href="/tags/socket/">socket</a>
+            
+              <a href="/tags/tcp-ip/">tcp/ip</a>
+            
+          </div>
+        
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/post/tornado-src-analysis/tornado_ioloop/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">tornado ioloop实现解析</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+    
+    
+  </nav>
+
+      </footer>
+    
+
+  </article>
+
+
+          </div>
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+      </main>
+
+      <footer id="footer" class="footer">
+
+  <div class="social-links">
+    
+      
+        
+          <a href="mailto:beeeeeeenny@gmail.com" class="iconfont icon-email" title="email"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+          <a href="https://github.com/beeeeeeenny" class="iconfont icon-github" title="github"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    
+    
+      <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    
+  </div>
+
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://hexo.io/">Hexo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/ahonn/hexo-theme-even">Even</a>
+  </span>
+
+  <span class="copyright-year">
+    
+    &copy; 
+     
+      2017 - 
+    
+    2018
+
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">Beeeeeeenny</span>
+  </span>
+</div>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+
+    
+  
+  
+
+  
+
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  
+
+  
+
+
+    <script type="text/javascript" src="/js/src/even.js?v=2.6.0"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=2.6.0"></script>
+
+  </body>
+</html>

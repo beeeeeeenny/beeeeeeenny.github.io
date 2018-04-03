@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+
+  <meta name="description" content="tornado定时器PeriodicCallback实现解析"/>
+
+
+
+
+  <meta name="keywords" content="tornado, PeriodicCallback, 定时器, Benny's Blog" />
+
+
+
+
+
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Benny's Blog">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.6.0" />
+
+
+
+<link rel="canonical" href="http://yoursite.com/post/tornado-src-analysis/tornado_ioloop_PeriodicCallback/"/>
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.6.0" />
+
+
+
+
+
+
+  
+
+
+
+  <script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.1.1/av-min.js"></script>
+  <script id="leancloud">
+    AV.init({
+      appId: "I3IBDTb5HPIE4K6wc1piW6Vu-gzGzoHsz",
+      appKey: "7N8Br3x2qKVpf3T8JRVFfgp9"
+    });
+  </script>
+
+
+
+
+
+    <title> tornado定时器PeriodicCallback实现解析 - Benny's Blog </title>
+  </head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">Benny's Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    
+      <a href="/">
+        <li class="mobile-menu-item">
+          
+          
+            首页
+          
+        </li>
+      </a>
+    
+      <a href="/archives/">
+        <li class="mobile-menu-item">
+          
+          
+            归档
+          
+        </li>
+      </a>
+    
+      <a href="/about">
+        <li class="mobile-menu-item">
+          
+          
+            关于
+          
+        </li>
+      </a>
+    
+  </ul>
+</nav>
+
+    <div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">Benny's Blog</a>
+</div>
+
+<nav class="site-navbar">
+  
+    <ul id="menu" class="menu">
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/">
+            
+            
+              首页
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/archives/">
+            
+            
+              归档
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/about">
+            
+            
+              关于
+            
+          </a>
+        </li>
+      
+    </ul>
+  
+</nav>
+
+      </header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content">
+            
+  
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          tornado定时器PeriodicCallback实现解析
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-11-10
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/tornado源码解析/">tornado源码解析</a>
+            
+          </div>
+        
+        
+        <div class="post-visits"
+             data-url="/post/tornado-src-analysis/tornado_ioloop_PeriodicCallback/"
+             data-title="tornado定时器PeriodicCallback实现解析">
+            阅读次数
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+  <div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">文章目录</h2>
+    <div class="post-toc-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#tornado-PeriodicCallback"><span class="toc-text">tornado PeriodicCallback</span></a></li></ol>
+    </div>
+  </div>
+
+
+    <div class="post-content">
+      
+        <h2 id="tornado-PeriodicCallback"><a href="#tornado-PeriodicCallback" class="headerlink" title="tornado PeriodicCallback"></a>tornado PeriodicCallback</h2><p>tornado.ioloop.PeriodicCallback是tornado实现的定时器。</p>
+   <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Application</span><span class="params">(tornado.web.Application)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></span><br><span class="line">        handlers = [</span><br><span class="line">            (<span class="string">r"/"</span>, HomeHandler),</span><br><span class="line">        ]</span><br><span class="line">        settings = dict(</span><br><span class="line">            debug=<span class="keyword">True</span>,</span><br><span class="line">        )</span><br><span class="line">        super(Application, self).__init__(handlers, **settings)</span><br></pre></td></tr></table></figure>
+<a id="more"></a>
+<p>当创建tornado Application时，如果设置“debug=True”，tornado会在源程序修改后自动编译，而不需要我们手动重启。</p>
+<ul>
+<li><p>tornado.web.Application.<strong>init</strong>()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, handlers=None, default_host=None, transforms=None,</span></span></span><br><span class="line"><span class="function"><span class="params">             **settings)</span>:</span></span><br><span class="line">    <span class="comment">#####省略#####</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 当设置了debug=True时，tornado会默认设置autoreload=True</span></span><br><span class="line">    <span class="keyword">if</span> self.settings.get(<span class="string">'debug'</span>):</span><br><span class="line">        self.settings.setdefault(<span class="string">'autoreload'</span>, <span class="keyword">True</span>)</span><br><span class="line">        self.settings.setdefault(<span class="string">'compiled_template_cache'</span>, <span class="keyword">False</span>)</span><br><span class="line">        self.settings.setdefault(<span class="string">'static_hash_cache'</span>, <span class="keyword">False</span>)</span><br><span class="line">        self.settings.setdefault(<span class="string">'serve_traceback'</span>, <span class="keyword">True</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment">#####省略#####</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 判断是否设置了autoreload，如果设置了就会调用autoreload.start()，</span></span><br><span class="line">    <span class="comment"># 启动自动重载功能</span></span><br><span class="line">    <span class="keyword">if</span> self.settings.get(<span class="string">'autoreload'</span>):</span><br><span class="line">        <span class="keyword">from</span> tornado <span class="keyword">import</span> autoreload</span><br><span class="line">        autoreload.start()</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>tornado.autoreload.start()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">start</span><span class="params">(io_loop=None, check_time=<span class="number">500</span>)</span>:</span></span><br><span class="line">    <span class="comment"># 获取IOLoop实例</span></span><br><span class="line">    io_loop = io_loop <span class="keyword">or</span> ioloop.IOLoop.current()</span><br><span class="line">    <span class="comment"># 如果当前IOLoop实例是弱引用的则直接返回</span></span><br><span class="line">    <span class="keyword">if</span> io_loop <span class="keyword">in</span> _io_loops:</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    _io_loops[io_loop] = <span class="keyword">True</span></span><br><span class="line">    <span class="keyword">if</span> len(_io_loops) &gt; <span class="number">1</span>:</span><br><span class="line">        gen_log.warning(<span class="string">"tornado.autoreload started more than once in the same process"</span>)</span><br><span class="line">    modify_times = &#123;&#125;</span><br><span class="line">    <span class="comment"># 生成回调函数</span></span><br><span class="line">    callback = functools.partial(_reload_on_update, modify_times)</span><br><span class="line">    <span class="comment"># 初始化tornado.PeriodicCallback定时器</span></span><br><span class="line">    scheduler = ioloop.PeriodicCallback(callback, check_time, io_loop=io_loop)</span><br><span class="line">    <span class="comment"># 开始执行定时器</span></span><br><span class="line">    scheduler.start()</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>tornado.ioloop.PeriodicCallback.start()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">start</span><span class="params">(self)</span>:</span></span><br><span class="line">    <span class="comment"># 设置定时器运行中</span></span><br><span class="line">    self._running = <span class="keyword">True</span></span><br><span class="line">    <span class="comment"># 初始化下次的超时事件的最后期限</span></span><br><span class="line">    self._next_timeout = self.io_loop.time()</span><br><span class="line">    <span class="comment"># 关键方法，对下次超时事件的封装</span></span><br><span class="line">    self._schedule_next()</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>tornado.ioloop.PeriodicCallback._schedule_next()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_schedule_next</span><span class="params">(self)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> self._running:</span><br><span class="line">        <span class="comment"># 获取当前时间</span></span><br><span class="line">        current_time = self.io_loop.time()</span><br><span class="line">        <span class="comment"># 如果当前时间已经超过了超时事件的最后期限，则重新设置超时时间</span></span><br><span class="line">        <span class="keyword">if</span> self._next_timeout &lt;= current_time:</span><br><span class="line">            <span class="comment"># self.callback_time为autoreload.start()方法中初始化定时器时传入的</span></span><br><span class="line">            <span class="comment"># check_time，即500毫秒</span></span><br><span class="line">            callback_time_sec = self.callback_time / <span class="number">1000.0</span></span><br><span class="line">            self._next_timeout += (math.floor((current_time - self._next_timeout) /</span><br><span class="line">                                              callback_time_sec) + <span class="number">1</span>) * callback_time_sec</span><br><span class="line">        <span class="comment"># 关键所在，添加超时事件，将self._run作为超时后的回调函数</span></span><br><span class="line">        self._timeout = self.io_loop.add_timeout(self._next_timeout, self._run)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>tornado.ioloop.PeriodicCallback._run()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_run</span><span class="params">(self)</span>:</span></span><br><span class="line">    <span class="comment"># 判断定时器是否还在运行</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> self._running:</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="comment"># 调用autoreload.start()方法中初始化时传入的超时回调函数</span></span><br><span class="line">        <span class="keyword">return</span> self.callback()</span><br><span class="line">    <span class="keyword">except</span> Exception:</span><br><span class="line">        self.io_loop.handle_callback_exception(self.callback)</span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        <span class="comment"># 无论如何，都会再次调用self._schedule_next()再次添加超时事件到IOLoop中，</span></span><br><span class="line">        <span class="comment"># 这样就会一直循环，即定时器操作</span></span><br><span class="line">        self._schedule_next()</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>在PeriodicCallback._schedule_next()的最后一行执行的添加超时事件就会被IOLoop下次循环中。</p>
+<ul>
+<li><p><div id="add_timeout"></div>tornado.ioloop.IOLoop.add_timeout()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">add_timeout</span><span class="params">(self, deadline, callback, *args, **kwargs)</span>:</span></span><br><span class="line">    <span class="comment"># 判断超时事件的最后期限deadline是否为实数，一般为实数</span></span><br><span class="line">    <span class="keyword">if</span> isinstance(deadline, numbers.Real):</span><br><span class="line">        <span class="keyword">return</span> self.call_at(deadline, callback, *args, **kwargs)</span><br><span class="line">    <span class="comment"># 在使用call_later()方法设置超时事件时deadline为datetime.timedelta类型</span></span><br><span class="line">    <span class="keyword">elif</span> isinstance(deadline, datetime.timedelta):</span><br><span class="line">        <span class="keyword">return</span> self.call_at(self.time() + timedelta_to_seconds(deadline),</span><br><span class="line">                            callback, *args, **kwargs)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">raise</span> TypeError(<span class="string">"Unsupported deadline %r"</span> % deadline)</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>tornado规定继承至IOLoop的子类必须实现add_timeout()或者call_at()方法，因为默认实现只是相互调用，而没有实质作用。tornado.ioloop.PollIOLoop则实现了call_at()。</p>
+<ul>
+<li><p>tornado.ioloop.PollIOLoop.call_at()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">call_at</span><span class="params">(self, deadline, callback, *args, **kwargs)</span>:</span></span><br><span class="line">    <span class="comment"># 初始化_Timeout对象，该对象是对超时事件的封装，同时重写了__lt__()、__le__()</span></span><br><span class="line">    <span class="comment"># 两个方法，实现了_Timeout的大小比较。</span></span><br><span class="line">    timeout = _Timeout(</span><br><span class="line">        deadline,</span><br><span class="line">        functools.partial(stack_context.wrap(callback), *args, **kwargs),</span><br><span class="line">        self)</span><br><span class="line">    <span class="comment"># 通过堆排序添加timeout到self._timeouts列表中，因此确定了self._timeouts[0]</span></span><br><span class="line">    <span class="comment"># 总是最小的，即最后期限deadline最小的，当最后期限相同时则为最先添加</span></span><br><span class="line">    <span class="comment"># 到self._timeouts的</span></span><br><span class="line">    heapq.heappush(self._timeouts, timeout)</span><br><span class="line">    <span class="keyword">return</span> timeout</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>执行该函数之后timeouts就会被添加到self._timeouts中，当tornado IOLoop的epoll.poll()函数再次醒来时，则会重新迭代，然后调用self._timeouts，进行相关判断处理。详解参考：<a href="../tornado_ioloop#start">tornado ioloop解析</a></p>
+
+      
+    </div>
+
+    
+      
+      
+
+
+
+      
+      
+    
+
+    
+      <footer class="post-footer">
+        
+          <div class="post-tags">
+            
+              <a href="/tags/tornado/">tornado</a>
+            
+              <a href="/tags/PeriodicCallback/">PeriodicCallback</a>
+            
+              <a href="/tags/定时器/">定时器</a>
+            
+          </div>
+        
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/post/tornado-src-analysis/tornado_gen/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">tornado gen实现解析</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+    
+    
+      <a class="next" href="/post/tornado-src-analysis/tornado_application/">
+        <span class="next-text nav-default">tornado application实现解析</span>
+        <span class="prev-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+      </footer>
+    
+
+  </article>
+
+
+          </div>
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+      </main>
+
+      <footer id="footer" class="footer">
+
+  <div class="social-links">
+    
+      
+        
+          <a href="mailto:beeeeeeenny@gmail.com" class="iconfont icon-email" title="email"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+          <a href="https://github.com/beeeeeeenny" class="iconfont icon-github" title="github"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    
+    
+      <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    
+  </div>
+
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://hexo.io/">Hexo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/ahonn/hexo-theme-even">Even</a>
+  </span>
+
+  <span class="copyright-year">
+    
+    &copy; 
+     
+      2017 - 
+    
+    2018
+
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">Beeeeeeenny</span>
+  </span>
+</div>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+
+    
+  
+  
+
+  
+
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  
+
+  
+
+
+    <script type="text/javascript" src="/js/src/even.js?v=2.6.0"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=2.6.0"></script>
+
+  </body>
+</html>

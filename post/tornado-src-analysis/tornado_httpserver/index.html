@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+
+  <meta name="description" content="tornado httpserver实现解析"/>
+
+
+
+
+  <meta name="keywords" content="tornado, httpserver, Benny's Blog" />
+
+
+
+
+
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Benny's Blog">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.6.0" />
+
+
+
+<link rel="canonical" href="http://yoursite.com/post/tornado-src-analysis/tornado_httpserver/"/>
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.6.0" />
+
+
+
+
+
+
+  
+
+
+
+  <script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.1.1/av-min.js"></script>
+  <script id="leancloud">
+    AV.init({
+      appId: "I3IBDTb5HPIE4K6wc1piW6Vu-gzGzoHsz",
+      appKey: "7N8Br3x2qKVpf3T8JRVFfgp9"
+    });
+  </script>
+
+
+
+
+
+    <title> tornado httpserver实现解析 - Benny's Blog </title>
+  </head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">Benny's Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    
+      <a href="/">
+        <li class="mobile-menu-item">
+          
+          
+            首页
+          
+        </li>
+      </a>
+    
+      <a href="/archives/">
+        <li class="mobile-menu-item">
+          
+          
+            归档
+          
+        </li>
+      </a>
+    
+      <a href="/about">
+        <li class="mobile-menu-item">
+          
+          
+            关于
+          
+        </li>
+      </a>
+    
+  </ul>
+</nav>
+
+    <div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">Benny's Blog</a>
+</div>
+
+<nav class="site-navbar">
+  
+    <ul id="menu" class="menu">
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/">
+            
+            
+              首页
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/archives/">
+            
+            
+              归档
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/about">
+            
+            
+              关于
+            
+          </a>
+        </li>
+      
+    </ul>
+  
+</nav>
+
+      </header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content">
+            
+  
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          tornado httpserver实现解析
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-09-08
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/tornado源码解析/">tornado源码解析</a>
+            
+          </div>
+        
+        
+        <div class="post-visits"
+             data-url="/post/tornado-src-analysis/tornado_httpserver/"
+             data-title="tornado httpserver实现解析">
+            阅读次数
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+  <div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">文章目录</h2>
+    <div class="post-toc-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#tornado-httpserver"><span class="toc-text">tornado httpserver</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#相关方法解析"><span class="toc-text">相关方法解析</span></a></li></ol>
+    </div>
+  </div>
+
+
+    <div class="post-content">
+      
+        <h2 id="tornado-httpserver"><a href="#tornado-httpserver" class="headerlink" title="tornado httpserver"></a>tornado httpserver</h2><p>tornado httpserver封装了对http请求的处理，是一个非阻塞、单线程的HTTP服务器。一个完整的web服务器示例如下，启动脚本后在浏览器访问<a href="http://localhost:8888" target="_blank" rel="noopener">http://localhost:8888</a> ，页面会显示Hello，world：</p>
+<a id="more"></a>
+   <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> tornado.httpserver</span><br><span class="line"><span class="keyword">import</span> tornado.ioloop</span><br><span class="line"><span class="keyword">import</span> tornado.options</span><br><span class="line"><span class="keyword">import</span> tornado.web</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> tornado.options <span class="keyword">import</span> define, options</span><br><span class="line"></span><br><span class="line">define(<span class="string">"port"</span>, default=<span class="number">8888</span>, help=<span class="string">"run on the given port"</span>, type=int)</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MainHandler</span><span class="params">(tornado.web.RequestHandler)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">get</span><span class="params">(self)</span>:</span></span><br><span class="line">        self.write(<span class="string">"Hello, world"</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="comment"># 解析启动命令</span></span><br><span class="line">    tornado.options.parse_command_line()</span><br><span class="line">    <span class="comment"># 创建Application示例</span></span><br><span class="line">    application = tornado.web.Application([</span><br><span class="line">        (<span class="string">r"/"</span>, MainHandler),</span><br><span class="line">    ])</span><br><span class="line">    <span class="comment"># 创建HTTPServer实例</span></span><br><span class="line">    http_server = tornado.httpserver.HTTPServer(application)</span><br><span class="line">    <span class="comment"># 监听端口，创建服务器socket</span></span><br><span class="line">    http_server.listen(options.port)</span><br><span class="line">    <span class="comment"># 获取IOLoop并启动</span></span><br><span class="line">    tornado.ioloop.IOLoop.current().start()</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<p>从实例中可以看到一个web服务器同时使用了tornado.httpserver.HTTPServer与tornado.ioloop.IOLoop，二者不可分离。</p>
+<p>HTTPServer有三个父类：tornado.tcpserver.TCPServer、tornado.util.Configurable、<br>tornado.httputil.HTTPServerConnectionDelegate</p>
+<p>当创建HTTPServer实例，即调用tornado.httpserver.HTTPServer(application)时，程序首先会调用tornado.util.Configurable.<strong>new</strong>()方法创建HTTPServer实例，对tornado.util.Configurable的详解可参考： <a href="../tornado_util_configurable">tornado配置类Configurable解析</a>，实例创建完成之后，会调用tornado.httpserver.HTTPServer.initialize()初始化参数配置。</p>
+<ul>
+<li><p>tornado.httpserver.HTTPServer.initialize()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">initialize</span><span class="params">(self, request_callback, no_keep_alive=False, io_loop=None,</span></span></span><br><span class="line"><span class="function"><span class="params">               xheaders=False, ssl_options=None, protocol=None,</span></span></span><br><span class="line"><span class="function"><span class="params">               decompress_request=False,</span></span></span><br><span class="line"><span class="function"><span class="params">               chunk_size=None, max_header_size=None,</span></span></span><br><span class="line"><span class="function"><span class="params">               idle_connection_timeout=None, body_timeout=None,</span></span></span><br><span class="line"><span class="function"><span class="params">               max_body_size=None, max_buffer_size=None,</span></span></span><br><span class="line"><span class="function"><span class="params">               trusted_downstream=None)</span>:</span></span><br><span class="line">    <span class="comment"># 由tornado.util.Configurable分析可知，self.request_callback为</span></span><br><span class="line">    <span class="comment"># tornado.web.Application实例</span></span><br><span class="line">    self.request_callback = request_callback</span><br><span class="line">    self.no_keep_alive = no_keep_alive</span><br><span class="line">    self.xheaders = xheaders</span><br><span class="line">    self.protocol = protocol</span><br><span class="line">    self.conn_params = HTTP1ConnectionParameters(</span><br><span class="line">        decompress=decompress_request,</span><br><span class="line">        chunk_size=chunk_size,</span><br><span class="line">        max_header_size=max_header_size,</span><br><span class="line">        header_timeout=idle_connection_timeout <span class="keyword">or</span> <span class="number">3600</span>,</span><br><span class="line">        max_body_size=max_body_size,</span><br><span class="line">        body_timeout=body_timeout,</span><br><span class="line">        no_keep_alive=no_keep_alive)</span><br><span class="line">    <span class="comment"># 调用TCPServer的初始化方法</span></span><br><span class="line">    TCPServer.__init__(self, io_loop=io_loop, ssl_options=ssl_options,</span><br><span class="line">                       max_buffer_size=max_buffer_size,</span><br><span class="line">                       read_chunk_size=chunk_size)</span><br><span class="line">    self._connections = set()</span><br><span class="line">    self.trusted_downstream = trusted_downstream</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>在开始的示例中实例化HTTPServer之后会执行：http_server.listen(options.port)，该代码会创建服务器socket，监听8888端口，socket详解可参考： <a href="../socket">socket解析</a>，listen()方法在tornado.tcpserver.TCPServer中实现。</p>
+<ul>
+<li><p>tornado.tcpserver.TCPServer.listen()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">listen</span><span class="params">(self, port, address=<span class="string">""</span>)</span>:</span></span><br><span class="line">    <span class="comment"># 调用bind_sockets</span></span><br><span class="line">    sockets = bind_sockets(port, address=address)</span><br><span class="line">    self.add_sockets(sockets)</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>listen()方法中就两行代码，分别调用了两个方法：tornado.netutil.bind_sockets()、add_sockets。tornado.netutil.bind_sockets()详解参考：<a href="../tornado_netutil#bind_sockets">tornado netutil解析</a></p>
+<ul>
+<li><p>tornado.tcpserver.TCPServer.add_sockets()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">add_sockets</span><span class="params">(self, sockets)</span>:</span></span><br><span class="line">    <span class="comment"># 获取当前IOLoop对象，此时还没有start</span></span><br><span class="line">    <span class="keyword">if</span> self.io_loop <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">        self.io_loop = IOLoop.current()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> sock <span class="keyword">in</span> sockets:</span><br><span class="line">        <span class="comment"># 保存socket到self._sockets</span></span><br><span class="line">        self._sockets[sock.fileno()] = sock</span><br><span class="line">        <span class="comment"># 重点方法</span></span><br><span class="line">        add_accept_handler(sock, self._handle_connection,</span><br><span class="line">                           io_loop=self.io_loop)</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>add_sockets()方法最重要的是调用add_accept_handler()函数，详解参考：<a href="../tornado_netutil#add_accept_handler">tornado netutil解析</a>，从add_accept_handler()函数的详解可知，客户端连接到服务器之后的数据传输，最终调用self._handle_connection()方法完成。</p>
+<ul>
+<li><p>tornado.tcpserver.TCPServer._handle_connection()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_handle_connection</span><span class="params">(self, connection, address)</span>:</span></span><br><span class="line">    <span class="comment"># 对ssl相关处理，可以略过</span></span><br><span class="line">    <span class="keyword">if</span> self.ssl_options <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</span><br><span class="line">        <span class="keyword">assert</span> ssl, <span class="string">"Python 2.6+ and OpenSSL required for SSL"</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            connection = ssl_wrap_socket(connection,</span><br><span class="line">                                         self.ssl_options,</span><br><span class="line">                                         server_side=<span class="keyword">True</span>,</span><br><span class="line">                                         do_handshake_on_connect=<span class="keyword">False</span>)</span><br><span class="line">        <span class="keyword">except</span> ssl.SSLError <span class="keyword">as</span> err:</span><br><span class="line">            <span class="keyword">if</span> err.args[<span class="number">0</span>] == ssl.SSL_ERROR_EOF:</span><br><span class="line">                <span class="keyword">return</span> connection.close()</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                <span class="keyword">raise</span></span><br><span class="line">        <span class="keyword">except</span> socket.error <span class="keyword">as</span> err:</span><br><span class="line">            <span class="keyword">if</span> errno_from_exception(err) <span class="keyword">in</span> (errno.ECONNABORTED, errno.EINVAL):</span><br><span class="line">                <span class="keyword">return</span> connection.close()</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                <span class="keyword">raise</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="comment"># 如果是ssl连接，则使用SSLIOStream处理connection，否则使用IOStream</span></span><br><span class="line">        <span class="keyword">if</span> self.ssl_options <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</span><br><span class="line">            stream = SSLIOStream(connection, io_loop=self.io_loop,</span><br><span class="line">                                 max_buffer_size=self.max_buffer_size,</span><br><span class="line">                                 read_chunk_size=self.read_chunk_size)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            stream = IOStream(connection, io_loop=self.io_loop,</span><br><span class="line">                              max_buffer_size=self.max_buffer_size,</span><br><span class="line">                              read_chunk_size=self.read_chunk_size)</span><br><span class="line">        <span class="comment"># 处理stream</span></span><br><span class="line">        future = self.handle_stream(stream, address)</span><br><span class="line">        <span class="keyword">if</span> future <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</span><br><span class="line">            <span class="comment"># 将future添加到IOLoop</span></span><br><span class="line">            self.io_loop.add_future(gen.convert_yielded(future),</span><br><span class="line">                                    <span class="keyword">lambda</span> f: f.result())</span><br><span class="line">    <span class="keyword">except</span> Exception:</span><br><span class="line">        app_log.error(<span class="string">"Error in connection callback"</span>, exc_info=<span class="keyword">True</span>)</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>以非ssl请求为例，tornado会实例化tornado.iostream.IOStream对象，用它去处理流，该对象主要封装了对请求数据读写的一些操作。之后会调用self.handle_stream(stream, address)，而该方法在tornado.HTTPServer中被实现。</p>
+<ul>
+<li><p>tornado.httpserver.HTTPServer.handle_stream()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">handle_stream</span><span class="params">(self, stream, address)</span>:</span></span><br><span class="line">    <span class="comment"># 将相关参数保存上下文中，以便之后获取</span></span><br><span class="line">    context = _HTTPRequestContext(stream, address,</span><br><span class="line">                                  self.protocol,</span><br><span class="line">                                  self.trusted_downstream)</span><br><span class="line">    <span class="comment"># 初始化HTTP1ServerConnection实例</span></span><br><span class="line">    conn = HTTP1ServerConnection(</span><br><span class="line">        stream, self.conn_params, context)</span><br><span class="line">    <span class="comment"># 保存连接conn到self._connections</span></span><br><span class="line">    self._connections.add(conn)</span><br><span class="line">    <span class="comment"># 开始在该conn连接上处理请求</span></span><br><span class="line">    conn.start_serving(self)</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>该方法主要是完成了对HTTP1ServerConnection的初始化，以及通过调用start_serving开始处理请求。http1connection.HTTP1ServerConnection.start_serving()详解参考：<a href="../tornado_http1connection#start_serving">tornado http1connection解析</a></p>
+<h2 id="相关方法解析"><a href="#相关方法解析" class="headerlink" title="相关方法解析"></a>相关方法解析</h2><ul>
+<li><p><div id="start_request"></div>tornado.httpserver.HTTPServer.start_request()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">start_request</span><span class="params">(self, server_conn, request_conn)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> isinstance(self.request_callback, httputil.HTTPServerConnectionDelegate):</span><br><span class="line">        delegate = self.request_callback.start_request(server_conn, request_conn)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        delegate = _CallableAdapter(self.request_callback, request_conn)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> self.xheaders:</span><br><span class="line">        delegate = _ProxyAdapter(delegate, request_conn)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> delegate</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>方法实现了父类tornado.httputil.HTTPServerConnectionDelegate中的start_request()方法，当新的请求开始时，这个方法会被服务器调用。通过上面tornado.httpserver.HTTPServer.initialize()详解可知，self.request_callback为tornado.web.Application实例，而tornado.web.Application刚好继承至httputil.HTTPServerConnectionDelegate，则会调用tornado.web.Application的start_request()方法。详解可参考：<a href="../tornado_application">tornado application解析</a>。最终返回的是继承至httputil.HTTPMessageDelegate的_RoutingDelegate对象，即delegate为httputil.HTTPMessageDelegate实例。</p>
+
+      
+    </div>
+
+    
+      
+      
+
+
+
+      
+      
+    
+
+    
+      <footer class="post-footer">
+        
+          <div class="post-tags">
+            
+              <a href="/tags/tornado/">tornado</a>
+            
+              <a href="/tags/httpserver/">httpserver</a>
+            
+          </div>
+        
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/post/tornado-src-analysis/tornado_netutil/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">tornado netutil实现解析</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+    
+    
+      <a class="next" href="/post/tornado-src-analysis/tornado_platform_posix/">
+        <span class="next-text nav-default">tornado posix实现解析</span>
+        <span class="prev-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+      </footer>
+    
+
+  </article>
+
+
+          </div>
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+      </main>
+
+      <footer id="footer" class="footer">
+
+  <div class="social-links">
+    
+      
+        
+          <a href="mailto:beeeeeeenny@gmail.com" class="iconfont icon-email" title="email"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+          <a href="https://github.com/beeeeeeenny" class="iconfont icon-github" title="github"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    
+    
+      <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    
+  </div>
+
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://hexo.io/">Hexo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/ahonn/hexo-theme-even">Even</a>
+  </span>
+
+  <span class="copyright-year">
+    
+    &copy; 
+     
+      2017 - 
+    
+    2018
+
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">Beeeeeeenny</span>
+  </span>
+</div>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+
+    
+  
+  
+
+  
+
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  
+
+  
+
+
+    <script type="text/javascript" src="/js/src/even.js?v=2.6.0"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=2.6.0"></script>
+
+  </body>
+</html>

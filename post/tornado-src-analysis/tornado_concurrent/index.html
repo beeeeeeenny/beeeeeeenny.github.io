@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+
+  <meta name="description" content="tornado concurrent实现解析"/>
+
+
+
+
+  <meta name="keywords" content="tornado, concurrent, Benny's Blog" />
+
+
+
+
+
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Benny's Blog">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.6.0" />
+
+
+
+<link rel="canonical" href="http://yoursite.com/post/tornado-src-analysis/tornado_concurrent/"/>
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.6.0" />
+
+
+
+
+
+
+  
+
+
+
+  <script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.1.1/av-min.js"></script>
+  <script id="leancloud">
+    AV.init({
+      appId: "I3IBDTb5HPIE4K6wc1piW6Vu-gzGzoHsz",
+      appKey: "7N8Br3x2qKVpf3T8JRVFfgp9"
+    });
+  </script>
+
+
+
+
+
+    <title> tornado concurrent实现解析 - Benny's Blog </title>
+  </head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">Benny's Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    
+      <a href="/">
+        <li class="mobile-menu-item">
+          
+          
+            首页
+          
+        </li>
+      </a>
+    
+      <a href="/archives/">
+        <li class="mobile-menu-item">
+          
+          
+            归档
+          
+        </li>
+      </a>
+    
+      <a href="/about">
+        <li class="mobile-menu-item">
+          
+          
+            关于
+          
+        </li>
+      </a>
+    
+  </ul>
+</nav>
+
+    <div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">Benny's Blog</a>
+</div>
+
+<nav class="site-navbar">
+  
+    <ul id="menu" class="menu">
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/">
+            
+            
+              首页
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/archives/">
+            
+            
+              归档
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/about">
+            
+            
+              关于
+            
+          </a>
+        </li>
+      
+    </ul>
+  
+</nav>
+
+      </header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content">
+            
+  
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          tornado concurrent实现解析
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-11-10
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/tornado源码解析/">tornado源码解析</a>
+            
+          </div>
+        
+        
+        <div class="post-visits"
+             data-url="/post/tornado-src-analysis/tornado_concurrent/"
+             data-title="tornado concurrent实现解析">
+            阅读次数
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+  <div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">文章目录</h2>
+    <div class="post-toc-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#tornado-concurrent"><span class="toc-text">tornado concurrent</span></a></li></ol>
+    </div>
+  </div>
+
+
+    <div class="post-content">
+      
+        <h2 id="tornado-concurrent"><a href="#tornado-concurrent" class="headerlink" title="tornado concurrent"></a>tornado concurrent</h2><p>用于处理线程和Futures的工具。Futures是python3.2中concurrent.futures包引入的并发编程模式。在本模块中，定义了一个兼容的Future类，它被设计用于协同工作，还有一些用于与concurrent.futures包交互的实用函数。</p>
+<a id="more"></a>
+<p>Future的设计目标是作为协程(coroutine)和IOLoop的媒介，从而将协程和IOLoop关联起来。<br>Future是异步操作结果的占位符，用于等待结果返回。通常作为函数IOLoop.add_future()的参数或 gen.coroutine协程中yield的返回值。<br>等到结果返回时，外部可以通过调用set_result()设置真正的结果，将结果保存在Future内存中，然后调用所有回调函数，恢复协程的执行，最后通过result()获取结果。</p>
+<p>Future类通过self._done的值来判断本次Future操作是否结束，默认为False，当调用set_result()设置结果、或者调用set_exc_info()设置异常时会调用_set_done()修改其值，即表示本次操作已经完成。</p>
+<ul>
+<li><p>tornado.concurrent.Future.set_result()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">set_result</span><span class="params">(self, result)</span>:</span></span><br><span class="line">    <span class="comment"># 将结果保存到self._result</span></span><br><span class="line">    self._result = result</span><br><span class="line">    <span class="comment"># 修改self._done，并调用所有回调函数</span></span><br><span class="line">    self._set_done()</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>tornado.concurrent.Future._set_done()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_set_done</span><span class="params">(self)</span>:</span></span><br><span class="line">    <span class="comment"># 修改self._done值，表示本次操作已完成</span></span><br><span class="line">    self._done = <span class="keyword">True</span></span><br><span class="line">    <span class="comment"># 循环执行self._callbacks中的回调函数，通过add_done_callback()定义</span></span><br><span class="line">    <span class="keyword">for</span> cb <span class="keyword">in</span> self._callbacks:</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            cb(self)</span><br><span class="line">        <span class="keyword">except</span> Exception:</span><br><span class="line">            app_log.exception(<span class="string">'Exception in callback %r for %r'</span>,</span><br><span class="line">                              cb, self)</span><br><span class="line">    self._callbacks = <span class="keyword">None</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>tornado.concurrent.Future.add_done_callback()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">add_done_callback</span><span class="params">(self, fn)</span>:</span></span><br><span class="line">    <span class="comment"># 添加本次Future操作完成时的回调函数，如果Future还没结束，则将回调函数加入</span></span><br><span class="line">    <span class="comment"># self._callbacks，以便结束时调用，如果已经结束，则直接运行回调函数</span></span><br><span class="line">    <span class="keyword">if</span> self._done:</span><br><span class="line">        fn(self)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        self._callbacks.append(fn)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>tornado.concurrent.Future.result()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">result</span><span class="params">(self, timeout=None)</span>:</span></span><br><span class="line">    <span class="comment"># 清理日志</span></span><br><span class="line">    self._clear_tb_log()</span><br><span class="line">    <span class="comment"># 判断self._result结果是否为None，通过set_result()设置</span></span><br><span class="line">    <span class="keyword">if</span> self._result <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</span><br><span class="line">        <span class="keyword">return</span> self._result</span><br><span class="line">    <span class="comment"># 判断是否有异常信息，通过set_exc_info()设置</span></span><br><span class="line">    <span class="keyword">if</span> self._exc_info <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            raise_exc_info(self._exc_info)</span><br><span class="line">        <span class="keyword">finally</span>:</span><br><span class="line">            self = <span class="keyword">None</span></span><br><span class="line">    <span class="comment"># 检查是否结束</span></span><br><span class="line">    self._check_done()</span><br><span class="line">    <span class="keyword">return</span> self._result</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><div id="chain_future"></div>tornado.concurrent.chain_future()</p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">chain_future</span><span class="params">(a, b)</span>:</span></span><br><span class="line">    <span class="comment"># 将两个Future对象关联在一起，一个完成，另一个也完成</span></span><br><span class="line">    <span class="comment"># “a”的结果（成功或失败）将被复制到“b”，除非在“a”结束之前，“b”已经完成或被取消。</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">copy</span><span class="params">(future)</span>:</span></span><br><span class="line">        <span class="keyword">assert</span> future <span class="keyword">is</span> a</span><br><span class="line">        <span class="comment"># 如果b已经完成或者取消，则直接返回</span></span><br><span class="line">        <span class="keyword">if</span> b.done():</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">        <span class="keyword">if</span> (isinstance(a, TracebackFuture) <span class="keyword">and</span></span><br><span class="line">                isinstance(b, TracebackFuture) <span class="keyword">and</span></span><br><span class="line">                a.exc_info() <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>):</span><br><span class="line">            b.set_exc_info(a.exc_info())</span><br><span class="line">        <span class="keyword">elif</span> a.exception() <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</span><br><span class="line">            b.set_exception(a.exception())</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            b.set_result(a.result())</span><br><span class="line">    <span class="comment"># 将copy()添加到a的回调列表中</span></span><br><span class="line">    a.add_done_callback(copy)</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>首先会调用a.add_done_callback(copy)，若a已经完成则直接运行copy函数，否则加入到回调列表中等到a完成时再运行。copy函数将两个Future对象联系到了一起，用作结果返回、超时处理。</p>
+
+      
+    </div>
+
+    
+      
+      
+
+
+
+      
+      
+    
+
+    
+      <footer class="post-footer">
+        
+          <div class="post-tags">
+            
+              <a href="/tags/tornado/">tornado</a>
+            
+              <a href="/tags/concurrent/">concurrent</a>
+            
+          </div>
+        
+        
+        
+  <nav class="post-nav">
+    
+    
+      <a class="next" href="/post/tornado-src-analysis/tornado_gen/">
+        <span class="next-text nav-default">tornado gen实现解析</span>
+        <span class="prev-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+      </footer>
+    
+
+  </article>
+
+
+          </div>
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+      </main>
+
+      <footer id="footer" class="footer">
+
+  <div class="social-links">
+    
+      
+        
+          <a href="mailto:beeeeeeenny@gmail.com" class="iconfont icon-email" title="email"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+          <a href="https://github.com/beeeeeeenny" class="iconfont icon-github" title="github"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    
+    
+      <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    
+  </div>
+
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://hexo.io/">Hexo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/ahonn/hexo-theme-even">Even</a>
+  </span>
+
+  <span class="copyright-year">
+    
+    &copy; 
+     
+      2017 - 
+    
+    2018
+
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">Beeeeeeenny</span>
+  </span>
+</div>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+
+    
+  
+  
+
+  
+
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  
+
+  
+
+
+    <script type="text/javascript" src="/js/src/even.js?v=2.6.0"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=2.6.0"></script>
+
+  </body>
+</html>

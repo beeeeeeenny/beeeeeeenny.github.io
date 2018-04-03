@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+
+  <meta name="description" content="tornado配置类configurable的实现解析"/>
+
+
+
+
+  <meta name="keywords" content="tornado, configurable, Benny's Blog" />
+
+
+
+
+
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Benny's Blog">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.6.0" />
+
+
+
+<link rel="canonical" href="http://yoursite.com/post/tornado-src-analysis/tornado_util_configurable/"/>
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.6.0" />
+
+
+
+
+
+
+  
+
+
+
+  <script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.1.1/av-min.js"></script>
+  <script id="leancloud">
+    AV.init({
+      appId: "I3IBDTb5HPIE4K6wc1piW6Vu-gzGzoHsz",
+      appKey: "7N8Br3x2qKVpf3T8JRVFfgp9"
+    });
+  </script>
+
+
+
+
+
+    <title> tornado配置类configurable的实现解析 - Benny's Blog </title>
+  </head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">Benny's Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    
+      <a href="/">
+        <li class="mobile-menu-item">
+          
+          
+            首页
+          
+        </li>
+      </a>
+    
+      <a href="/archives/">
+        <li class="mobile-menu-item">
+          
+          
+            归档
+          
+        </li>
+      </a>
+    
+      <a href="/about">
+        <li class="mobile-menu-item">
+          
+          
+            关于
+          
+        </li>
+      </a>
+    
+  </ul>
+</nav>
+
+    <div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">Benny's Blog</a>
+</div>
+
+<nav class="site-navbar">
+  
+    <ul id="menu" class="menu">
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/">
+            
+            
+              首页
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/archives/">
+            
+            
+              归档
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/about">
+            
+            
+              关于
+            
+          </a>
+        </li>
+      
+    </ul>
+  
+</nav>
+
+      </header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content">
+            
+  
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          tornado配置类configurable的实现解析
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-08-31
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/tornado源码解析/">tornado源码解析</a>
+            
+          </div>
+        
+        
+        <div class="post-visits"
+             data-url="/post/tornado-src-analysis/tornado_util_configurable/"
+             data-title="tornado配置类configurable的实现解析">
+            阅读次数
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+  <div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">文章目录</h2>
+    <div class="post-toc-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#tornado-util-configurable"><span class="toc-text">tornado util configurable</span></a></li></ol>
+    </div>
+  </div>
+
+
+    <div class="post-content">
+      
+        <h2 id="tornado-util-configurable"><a href="#tornado-util-configurable" class="headerlink" title="tornado util configurable"></a>tornado util configurable</h2><p>tornado.util.Configurable，一个配置类，是工厂模式的实现，通过使用构造函数（<strong>new</strong>()）作为工厂方法。其子类必须实现configurable_base()、configurable_default()、initialize()。通过调用configure()函数去配置当基类（不是指Configurable，而是继承至Configurable的类，如tornado.ioloop.IOLoop）被实例化时使用的实现类，以及配置其实现类初始化的关键字参数。</p>
+<a id="more"></a>
+<p>示例：</p>
+   <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> tornado <span class="keyword">import</span> httpclient</span><br><span class="line"></span><br><span class="line">httpclient.AsyncHTTPClient.configure\</span><br><span class="line">(<span class="string">"tornado.curl_httpclient.CurlAsyncHTTPClient"</span>, max_clients=<span class="number">10000</span>)</span><br><span class="line"></span><br><span class="line">http_client = httpclient.AsyncHTTPClient()</span><br></pre></td></tr></table></figure>
+<p>以tornado.httpclient.AsyncHTTPClient为示例来开始tornado.util.Configurable的剖析。从tornado源码可知，AsyncHTTPClient继承至Configurable，同时tornado.curl_httpclient.CurlAsyncHTTPClient继承至AsyncHTTPClient。</p>
+<ul>
+<li><p>第二行AsyncHTTPClient调用configure去设置它的实现类及关键字参数max_clients=10000。其源码中直接调用了父类（Configurable）的configure()函数。</p>
+<ul>
+<li><p>tornado.httpclient.AsyncHTTPClient.configure()</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@classmethod</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">configure</span><span class="params">(cls, impl, **kwargs)</span>:</span></span><br><span class="line">    super(AsyncHTTPClient, cls).configure(impl, **kwargs)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>tornado.util.Configurable.configure()</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@classmethod</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">configure</span><span class="params">(cls, impl, **kwargs)</span>:</span></span><br><span class="line">    <span class="comment"># cls为AsyncHTTPClient，获取可配置层次结构的基类base（AsyncHTTPClient）</span></span><br><span class="line">    base = cls.configurable_base()</span><br><span class="line">    <span class="comment"># 由上面的例子得：impl="tornado.curl_httpclient.CurlAsyncHTTPClient"</span></span><br><span class="line">    <span class="keyword">if</span> isinstance(impl, (str, unicode_type)):</span><br><span class="line">        <span class="comment"># 引入tornado.curl_httpclient.CurlAsyncHTTPClient到当前上下文环境</span></span><br><span class="line">        impl = import_object(impl)</span><br><span class="line">    <span class="keyword">if</span> impl <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span> <span class="keyword">and</span> <span class="keyword">not</span> issubclass(impl, cls):</span><br><span class="line">        <span class="keyword">raise</span> ValueError(<span class="string">"Invalid subclass of %s"</span> % cls)</span><br><span class="line">    <span class="comment"># 通过全局变量保存数据，这两个变量是初始化实例</span></span><br><span class="line">    <span class="comment"># （tornado.util.Configurable.__new__()）时非常重要的数据</span></span><br><span class="line">    <span class="comment"># 值为：tornado.curl_httpclient.CurlAsyncHTTPClient</span></span><br><span class="line">    base.__impl_class = impl </span><br><span class="line">    <span class="comment"># 值为：&#123;"max_clients": 10000&#125;</span></span><br><span class="line">    base.__impl_kwargs = kwargs</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+<li><p>第三行获取AsyncHTTPClient实例，将会调用tornado.util.Configurable.<strong>new</strong>()函数。</p>
+<ul>
+<li><p>tornado.util.Configurable.<strong>new</strong>()</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">__new__</span><span class="params">(cls, *args, **kwargs)</span>:</span></span><br><span class="line">    <span class="comment"># cls为AsyncHTTPClient，获取可配置层次结构的基类，</span></span><br><span class="line">    <span class="comment"># 通常是其自身（如tornado.httpclient.AsyncHTTPClient.configurable_base()）</span></span><br><span class="line">    base = cls.configurable_base()</span><br><span class="line">    init_kwargs = &#123;&#125;</span><br><span class="line">    <span class="comment"># 判断cls是否是基类base</span></span><br><span class="line">    <span class="keyword">if</span> cls <span class="keyword">is</span> base:</span><br><span class="line">        <span class="comment"># 获取当前配置的实现类，因为之前配置过实现类，即第二行，</span></span><br><span class="line">        <span class="comment"># 所以得到impl为tornado.curl_httpclient.CurlAsyncHTTPClient</span></span><br><span class="line">        impl = cls.configured_class()</span><br><span class="line">        <span class="comment"># 判断configure()函数配置的关键字参数是否为空</span></span><br><span class="line">        <span class="keyword">if</span> base.__impl_kwargs:</span><br><span class="line">            <span class="comment"># 更新初始化参数字典，因为之前配置过关键字参数，即第二行，</span></span><br><span class="line">            <span class="comment"># base.__impl_kwargs=&#123;"max_clients": 10000&#125;</span></span><br><span class="line">            init_kwargs.update(base.__impl_kwargs)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="comment"># 实现类即为cls</span></span><br><span class="line">        impl = cls</span><br><span class="line">    <span class="comment"># 更新初始化参数字典</span></span><br><span class="line">    init_kwargs.update(kwargs)</span><br><span class="line">    <span class="comment"># 实例化cls，如示例，instance为tornado.curl_httpclient.CurlAsyncHTTPClient</span></span><br><span class="line">    instance = super(Configurable, cls).__new__(impl)</span><br><span class="line">    <span class="comment"># 初始化实例参数</span></span><br><span class="line">    instance.initialize(*args, **init_kwargs)</span><br><span class="line">    <span class="keyword">return</span> instance</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>tornado.util.Configurable.configured_class()</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@classmethod</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">configured_class</span><span class="params">(cls)</span>:</span></span><br><span class="line">    <span class="comment"># cls为AsyncHTTPClient</span></span><br><span class="line">    base = cls.configurable_base()</span><br><span class="line">    <span class="comment"># 判断有没有调用tornado.util.Configurable.configure()函数进行配置，</span></span><br><span class="line">    <span class="comment"># 如果没有配置过，就调用默认设置configurable_default()</span></span><br><span class="line">    <span class="keyword">if</span> cls.__impl_class <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">        base.__impl_class = cls.configurable_default()</span><br><span class="line">    <span class="keyword">return</span> base.__impl_class</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+</ul>
+<p>tornado.util.Configurable.configured_class()函数是选取实现类的关键，它会判断是否调用过tornado.util.Configurable.configure()函数去配置实现类了，然后以此选择相应的实现类。</p>
+
+      
+    </div>
+
+    
+      
+      
+
+
+
+      
+      
+    
+
+    
+      <footer class="post-footer">
+        
+          <div class="post-tags">
+            
+              <a href="/tags/tornado/">tornado</a>
+            
+              <a href="/tags/configurable/">configurable</a>
+            
+          </div>
+        
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/post/tornado-src-analysis/tornado_platform_posix/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">tornado posix实现解析</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+    
+    
+      <a class="next" href="/post/tornado-src-analysis/io_multiplexing/">
+        <span class="next-text nav-default">IO多路复用（Reactor）详解</span>
+        <span class="prev-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+      </footer>
+    
+
+  </article>
+
+
+          </div>
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+      </main>
+
+      <footer id="footer" class="footer">
+
+  <div class="social-links">
+    
+      
+        
+          <a href="mailto:beeeeeeenny@gmail.com" class="iconfont icon-email" title="email"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+          <a href="https://github.com/beeeeeeenny" class="iconfont icon-github" title="github"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    
+    
+      <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    
+  </div>
+
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://hexo.io/">Hexo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/ahonn/hexo-theme-even">Even</a>
+  </span>
+
+  <span class="copyright-year">
+    
+    &copy; 
+     
+      2017 - 
+    
+    2018
+
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">Beeeeeeenny</span>
+  </span>
+</div>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+
+    
+  
+  
+
+  
+
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  
+
+  
+
+
+    <script type="text/javascript" src="/js/src/even.js?v=2.6.0"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=2.6.0"></script>
+
+  </body>
+</html>

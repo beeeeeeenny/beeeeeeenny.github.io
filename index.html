@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Benny's Blog">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.6.0" />
+
+
+
+<link rel="canonical" href="http://yoursite.com/"/>
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.6.0" />
+
+
+
+
+
+
+  
+
+
+
+  <script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.1.1/av-min.js"></script>
+  <script id="leancloud">
+    AV.init({
+      appId: "I3IBDTb5HPIE4K6wc1piW6Vu-gzGzoHsz",
+      appKey: "7N8Br3x2qKVpf3T8JRVFfgp9"
+    });
+  </script>
+
+
+
+
+
+    <title> Benny's Blog </title>
+  </head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">Benny's Blog</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    
+      <a href="/">
+        <li class="mobile-menu-item">
+          
+          
+            首页
+          
+        </li>
+      </a>
+    
+      <a href="/archives/">
+        <li class="mobile-menu-item">
+          
+          
+            归档
+          
+        </li>
+      </a>
+    
+      <a href="/about">
+        <li class="mobile-menu-item">
+          
+          
+            关于
+          
+        </li>
+      </a>
+    
+  </ul>
+</nav>
+
+    <div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">Benny's Blog</a>
+</div>
+
+<nav class="site-navbar">
+  
+    <ul id="menu" class="menu">
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/">
+            
+            
+              首页
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/archives/">
+            
+            
+              归档
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/about">
+            
+            
+              关于
+            
+          </a>
+        </li>
+      
+    </ul>
+  
+</nav>
+
+      </header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content">
+            
+  <section id="posts" class="posts">
+    
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          <a class="post-link" href="/post/tornado-src-analysis/tornado_concurrent/">tornado concurrent实现解析</a>
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-11-10
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/tornado源码解析/">tornado源码解析</a>
+            
+          </div>
+        
+        
+        <div class="post-visits"
+             data-url="/post/tornado-src-analysis/tornado_concurrent/"
+             data-title="tornado concurrent实现解析">
+            阅读次数
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+
+    <div class="post-content">
+      
+        
+        
+          
+        
+
+        
+          <h2 id="tornado-concurrent"><a href="#tornado-concurrent" class="headerlink" title="tornado concurrent"></a>tornado concurrent</h2><p>用于处理线程和Futures的工具。Futures是python3.2中concurrent.futures包引入的并发编程模式。在本模块中，定义了一个兼容的Future类，它被设计用于协同工作，还有一些用于与concurrent.futures包交互的实用函数。</p>
+          <div class="read-more">
+            <a href="/post/tornado-src-analysis/tornado_concurrent/" class="read-more-link">阅读更多</a>
+          </div>
+        
+      
+    </div>
+
+    
+
+    
+
+  </article>
+
+    
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          <a class="post-link" href="/post/tornado-src-analysis/tornado_gen/">tornado gen实现解析</a>
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-11-10
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/tornado源码解析/">tornado源码解析</a>
+            
+          </div>
+        
+        
+        <div class="post-visits"
+             data-url="/post/tornado-src-analysis/tornado_gen/"
+             data-title="tornado gen实现解析">
+            阅读次数
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+
+    <div class="post-content">
+      
+        
+        
+          
+        
+
+        
+          <h2 id="tornado-gen"><a href="#tornado-gen" class="headerlink" title="tornado gen"></a>tornado gen</h2><p>tornado.gen是一个基于生成器的接口，可以更容易地在异步环境中工作。使用gen模块的代码在技术上是异步的，但它被写成一个单独的生成器，而不是另外的函数集合。</p>
+          <div class="read-more">
+            <a href="/post/tornado-src-analysis/tornado_gen/" class="read-more-link">阅读更多</a>
+          </div>
+        
+      
+    </div>
+
+    
+
+    
+
+  </article>
+
+    
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          <a class="post-link" href="/post/tornado-src-analysis/tornado_ioloop_PeriodicCallback/">tornado定时器PeriodicCallback实现解析</a>
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-11-10
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/tornado源码解析/">tornado源码解析</a>
+            
+          </div>
+        
+        
+        <div class="post-visits"
+             data-url="/post/tornado-src-analysis/tornado_ioloop_PeriodicCallback/"
+             data-title="tornado定时器PeriodicCallback实现解析">
+            阅读次数
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+
+    <div class="post-content">
+      
+        
+        
+          
+        
+
+        
+          <h2 id="tornado-PeriodicCallback"><a href="#tornado-PeriodicCallback" class="headerlink" title="tornado PeriodicCallback"></a>tornado PeriodicCallback</h2><p>tornado.ioloop.PeriodicCallback是tornado实现的定时器。</p>
+   <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Application</span><span class="params">(tornado.web.Application)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></span><br><span class="line">        handlers = [</span><br><span class="line">            (<span class="string">r"/"</span>, HomeHandler),</span><br><span class="line">        ]</span><br><span class="line">        settings = dict(</span><br><span class="line">            debug=<span class="keyword">True</span>,</span><br><span class="line">        )</span><br><span class="line">        super(Application, self).__init__(handlers, **settings)</span><br></pre></td></tr></table></figure>
+          <div class="read-more">
+            <a href="/post/tornado-src-analysis/tornado_ioloop_PeriodicCallback/" class="read-more-link">阅读更多</a>
+          </div>
+        
+      
+    </div>
+
+    
+
+    
+
+  </article>
+
+    
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          <a class="post-link" href="/post/tornado-src-analysis/tornado_application/">tornado application实现解析</a>
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-11-06
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/tornado源码解析/">tornado源码解析</a>
+            
+          </div>
+        
+        
+        <div class="post-visits"
+             data-url="/post/tornado-src-analysis/tornado_application/"
+             data-title="tornado application实现解析">
+            阅读次数
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+
+    <div class="post-content">
+      
+        
+        
+          
+        
+
+        
+          <h2 id="tornado-application"><a href="#tornado-application" class="headerlink" title="tornado application"></a>tornado application</h2><p>tornado.web.Application继承结构为：ReversibleRouter ——&gt; Router ——&gt; httputil.HTTPServerConnectionDelegate</p>
+          <div class="read-more">
+            <a href="/post/tornado-src-analysis/tornado_application/" class="read-more-link">阅读更多</a>
+          </div>
+        
+      
+    </div>
+
+    
+
+    
+
+  </article>
+
+    
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          <a class="post-link" href="/post/tornado-src-analysis/tornado_iostream/">tornado iostream实现解析</a>
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-11-06
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/tornado源码解析/">tornado源码解析</a>
+            
+          </div>
+        
+        
+        <div class="post-visits"
+             data-url="/post/tornado-src-analysis/tornado_iostream/"
+             data-title="tornado iostream实现解析">
+            阅读次数
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+
+    <div class="post-content">
+      
+        
+        
+          
+        
+
+        
+          <h2 id="tornado-iostream"><a href="#tornado-iostream" class="headerlink" title="tornado iostream"></a>tornado iostream</h2><p>封装了对socket fd底层数据的读取、写入操作，针对不同的情况实现了几种不同的读取方式。</p>
+          <div class="read-more">
+            <a href="/post/tornado-src-analysis/tornado_iostream/" class="read-more-link">阅读更多</a>
+          </div>
+        
+      
+    </div>
+
+    
+
+    
+
+  </article>
+
+    
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          <a class="post-link" href="/post/tornado-src-analysis/tornado_http1connection/">tornado http1connection实现解析</a>
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-11-06
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/tornado源码解析/">tornado源码解析</a>
+            
+          </div>
+        
+        
+        <div class="post-visits"
+             data-url="/post/tornado-src-analysis/tornado_http1connection/"
+             data-title="tornado http1connection实现解析">
+            阅读次数
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+
+    <div class="post-content">
+      
+        
+        
+          
+        
+
+        
+          <h2 id="tornado-http1connection"><a href="#tornado-http1connection" class="headerlink" title="tornado http1connection"></a>tornado http1connection</h2><p>tornado http1connection主要是对http协议进行了封装。</p>
+          <div class="read-more">
+            <a href="/post/tornado-src-analysis/tornado_http1connection/" class="read-more-link">阅读更多</a>
+          </div>
+        
+      
+    </div>
+
+    
+
+    
+
+  </article>
+
+    
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          <a class="post-link" href="/post/tornado-src-analysis/tornado_netutil/">tornado netutil实现解析</a>
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-09-25
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/tornado源码解析/">tornado源码解析</a>
+            
+          </div>
+        
+        
+        <div class="post-visits"
+             data-url="/post/tornado-src-analysis/tornado_netutil/"
+             data-title="tornado netutil实现解析">
+            阅读次数
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+
+    <div class="post-content">
+      
+        
+        
+          
+        
+
+        
+          <h2 id="tornado-netutil"><a href="#tornado-netutil" class="headerlink" title="tornado netutil"></a>tornado netutil</h2><ul>
+<li><div id="bind_sockets"></div>tornado.netutil.bind_sockets()</li>
+</ul>
+<p>该方法创建绑定到给定端口和地址的监听套接字socket。返回套接字对象的列表，比如给定的address参数映射到多个IP地址，则返回多个socket，最常见的是混合使用IPv4与IPv6，则会创建对应的两个socket。</p>
+          <div class="read-more">
+            <a href="/post/tornado-src-analysis/tornado_netutil/" class="read-more-link">阅读更多</a>
+          </div>
+        
+      
+    </div>
+
+    
+
+    
+
+  </article>
+
+    
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          <a class="post-link" href="/post/tornado-src-analysis/tornado_httpserver/">tornado httpserver实现解析</a>
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-09-08
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/tornado源码解析/">tornado源码解析</a>
+            
+          </div>
+        
+        
+        <div class="post-visits"
+             data-url="/post/tornado-src-analysis/tornado_httpserver/"
+             data-title="tornado httpserver实现解析">
+            阅读次数
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+
+    <div class="post-content">
+      
+        
+        
+          
+        
+
+        
+          <h2 id="tornado-httpserver"><a href="#tornado-httpserver" class="headerlink" title="tornado httpserver"></a>tornado httpserver</h2><p>tornado httpserver封装了对http请求的处理，是一个非阻塞、单线程的HTTP服务器。一个完整的web服务器示例如下，启动脚本后在浏览器访问<a href="http://localhost:8888" target="_blank" rel="noopener">http://localhost:8888</a> ，页面会显示Hello，world：</p>
+          <div class="read-more">
+            <a href="/post/tornado-src-analysis/tornado_httpserver/" class="read-more-link">阅读更多</a>
+          </div>
+        
+      
+    </div>
+
+    
+
+    
+
+  </article>
+
+    
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          <a class="post-link" href="/post/tornado-src-analysis/tornado_platform_posix/">tornado posix实现解析</a>
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-09-01
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/tornado源码解析/">tornado源码解析</a>
+            
+          </div>
+        
+        
+        <div class="post-visits"
+             data-url="/post/tornado-src-analysis/tornado_platform_posix/"
+             data-title="tornado posix实现解析">
+            阅读次数
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+
+    <div class="post-content">
+      
+        
+        
+          
+        
+
+        
+          <h2 id="tornado-posix"><a href="#tornado-posix" class="headerlink" title="tornado posix"></a>tornado posix</h2><p>tornado.platform.posix，Posix平台特定功能的实现。Posix平台指“可移植操作系统接口”（Portable Operation System Interface），最后的x代表类Unix系统。该文件主要是对Linux系统相关API的实现，Windows NT系列实现为tornado.platform.windows、tornado.platform.common。</p>
+          <div class="read-more">
+            <a href="/post/tornado-src-analysis/tornado_platform_posix/" class="read-more-link">阅读更多</a>
+          </div>
+        
+      
+    </div>
+
+    
+
+    
+
+  </article>
+
+    
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          <a class="post-link" href="/post/tornado-src-analysis/tornado_util_configurable/">tornado配置类configurable的实现解析</a>
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-08-31
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/tornado源码解析/">tornado源码解析</a>
+            
+          </div>
+        
+        
+        <div class="post-visits"
+             data-url="/post/tornado-src-analysis/tornado_util_configurable/"
+             data-title="tornado配置类configurable的实现解析">
+            阅读次数
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+
+    <div class="post-content">
+      
+        
+        
+          
+        
+
+        
+          <h2 id="tornado-util-configurable"><a href="#tornado-util-configurable" class="headerlink" title="tornado util configurable"></a>tornado util configurable</h2><p>tornado.util.Configurable，一个配置类，是工厂模式的实现，通过使用构造函数（<strong>new</strong>()）作为工厂方法。其子类必须实现configurable_base()、configurable_default()、initialize()。通过调用configure()函数去配置当基类（不是指Configurable，而是继承至Configurable的类，如tornado.ioloop.IOLoop）被实例化时使用的实现类，以及配置其实现类初始化的关键字参数。</p>
+          <div class="read-more">
+            <a href="/post/tornado-src-analysis/tornado_util_configurable/" class="read-more-link">阅读更多</a>
+          </div>
+        
+      
+    </div>
+
+    
+
+    
+
+  </article>
+
+    
+  </section>
+
+  
+  <nav class="pagination">
+    
+    
+      <a class="next" href="/page/2/">
+        <span class="next-text">下一页</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+
+          </div>
+          
+
+        </div>
+      </main>
+
+      <footer id="footer" class="footer">
+
+  <div class="social-links">
+    
+      
+        
+          <a href="mailto:beeeeeeenny@gmail.com" class="iconfont icon-email" title="email"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+          <a href="https://github.com/beeeeeeenny" class="iconfont icon-github" title="github"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    
+    
+      <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    
+  </div>
+
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://hexo.io/">Hexo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/ahonn/hexo-theme-even">Even</a>
+  </span>
+
+  <span class="copyright-year">
+    
+    &copy; 
+     
+      2017 - 
+    
+    2018
+
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">Beeeeeeenny</span>
+  </span>
+</div>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  
+
+  
+
+
+    <script type="text/javascript" src="/js/src/even.js?v=2.6.0"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=2.6.0"></script>
+
+  </body>
+</html>
