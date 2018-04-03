@@ -239,62 +239,6 @@
     <header class="post-header">
       <h1 class="post-title">
         
-          <a class="post-link" href="/post/tornado-src-analysis/tornado_gen/">tornado gen实现解析</a>
-        
-      </h1>
-
-      <div class="post-meta">
-        <span class="post-time">
-          2017-11-10
-        </span>
-        
-          <div class="post-category">
-            
-              <a href="/categories/tornado源码解析/">tornado源码解析</a>
-            
-          </div>
-        
-        
-        <div class="post-visits"
-             data-url="/post/tornado-src-analysis/tornado_gen/"
-             data-title="tornado gen实现解析">
-            阅读次数
-          </div>
-        
-      </div>
-    </header>
-
-    
-    
-
-    <div class="post-content">
-      
-        
-        
-          
-        
-
-        
-          <h2 id="tornado-gen"><a href="#tornado-gen" class="headerlink" title="tornado gen"></a>tornado gen</h2><p>tornado.gen是一个基于生成器的接口，可以更容易地在异步环境中工作。使用gen模块的代码在技术上是异步的，但它被写成一个单独的生成器，而不是另外的函数集合。</p>
-          <div class="read-more">
-            <a href="/post/tornado-src-analysis/tornado_gen/" class="read-more-link">阅读更多</a>
-          </div>
-        
-      
-    </div>
-
-    
-
-    
-
-  </article>
-
-    
-      
-  <article class="post">
-    <header class="post-header">
-      <h1 class="post-title">
-        
           <a class="post-link" href="/post/tornado-src-analysis/tornado_ioloop_PeriodicCallback/">tornado定时器PeriodicCallback实现解析</a>
         
       </h1>
@@ -352,13 +296,13 @@
     <header class="post-header">
       <h1 class="post-title">
         
-          <a class="post-link" href="/post/tornado-src-analysis/tornado_application/">tornado application实现解析</a>
+          <a class="post-link" href="/post/tornado-src-analysis/tornado_gen/">tornado gen实现解析</a>
         
       </h1>
 
       <div class="post-meta">
         <span class="post-time">
-          2017-11-06
+          2017-11-10
         </span>
         
           <div class="post-category">
@@ -369,8 +313,8 @@
         
         
         <div class="post-visits"
-             data-url="/post/tornado-src-analysis/tornado_application/"
-             data-title="tornado application实现解析">
+             data-url="/post/tornado-src-analysis/tornado_gen/"
+             data-title="tornado gen实现解析">
             阅读次数
           </div>
         
@@ -388,9 +332,9 @@
         
 
         
-          <h2 id="tornado-application"><a href="#tornado-application" class="headerlink" title="tornado application"></a>tornado application</h2><p>tornado.web.Application继承结构为：ReversibleRouter ——&gt; Router ——&gt; httputil.HTTPServerConnectionDelegate</p>
+          <h2 id="tornado-gen"><a href="#tornado-gen" class="headerlink" title="tornado gen"></a>tornado gen</h2><p>tornado.gen是一个基于生成器的接口，可以更容易地在异步环境中工作。使用gen模块的代码在技术上是异步的，但它被写成一个单独的生成器，而不是另外的函数集合。</p>
           <div class="read-more">
-            <a href="/post/tornado-src-analysis/tornado_application/" class="read-more-link">阅读更多</a>
+            <a href="/post/tornado-src-analysis/tornado_gen/" class="read-more-link">阅读更多</a>
           </div>
         
       
@@ -447,6 +391,62 @@
           <h2 id="tornado-iostream"><a href="#tornado-iostream" class="headerlink" title="tornado iostream"></a>tornado iostream</h2><p>封装了对socket fd底层数据的读取、写入操作，针对不同的情况实现了几种不同的读取方式。</p>
           <div class="read-more">
             <a href="/post/tornado-src-analysis/tornado_iostream/" class="read-more-link">阅读更多</a>
+          </div>
+        
+      
+    </div>
+
+    
+
+    
+
+  </article>
+
+    
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          <a class="post-link" href="/post/tornado-src-analysis/tornado_application/">tornado application实现解析</a>
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-11-06
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/tornado源码解析/">tornado源码解析</a>
+            
+          </div>
+        
+        
+        <div class="post-visits"
+             data-url="/post/tornado-src-analysis/tornado_application/"
+             data-title="tornado application实现解析">
+            阅读次数
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+
+    <div class="post-content">
+      
+        
+        
+          
+        
+
+        
+          <h2 id="tornado-application"><a href="#tornado-application" class="headerlink" title="tornado application"></a>tornado application</h2><p>tornado.web.Application继承结构为：ReversibleRouter ——&gt; Router ——&gt; httputil.HTTPServerConnectionDelegate</p>
+          <div class="read-more">
+            <a href="/post/tornado-src-analysis/tornado_application/" class="read-more-link">阅读更多</a>
           </div>
         
       

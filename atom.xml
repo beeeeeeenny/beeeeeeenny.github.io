@@ -41,30 +41,6 @@
   </entry>
   
   <entry>
-    <title>tornado gen实现解析</title>
-    <link href="http://yoursite.com/post/tornado-src-analysis/tornado_gen/"/>
-    <id>http://yoursite.com/post/tornado-src-analysis/tornado_gen/</id>
-    <published>2017-11-09T16:00:00.000Z</published>
-    <updated>2018-04-03T03:07:52.000Z</updated>
-    
-    <content type="html"><![CDATA[<h2 id="tornado-gen"><a href="#tornado-gen" class="headerlink" title="tornado gen"></a>tornado gen</h2><p>tornado.gen是一个基于生成器的接口，可以更容易地在异步环境中工作。使用gen模块的代码在技术上是异步的，但它被写成一个单独的生成器，而不是另外的函数集合。</p><a id="more"></a><ul><li><p><div id="with_timeout"></div>tornado.gen.with_timeout()</p> <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">with_timeout</span><span class="params">(timeout, future, io_loop=None, quiet_exceptions=<span class="params">()</span>)</span>:</span></span><br><span class="line">    <span class="comment"># 在超时时间内封装Future对象</span></span><br><span class="line">    <span class="comment"># 如果传入的future在超时之前没有完成，则引发TimeoutError，可以通过</span></span><br><span class="line">    <span class="comment"># .IOLoop.add_timeout（即datetime.timedelta或者相对于.IOLoop.time的绝对</span></span><br><span class="line">    <span class="comment"># 时间）允许的任何形式来指定。</span></span><br><span class="line">    <span class="comment"># 如果封装的Future在超时之后失败，则将记录该异常，除非它是“quiet_exceptions”</span></span><br><span class="line">    <span class="comment"># （可能是一个异常类型或一系列类型）中包含的类型。</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 将一个yielded对象转换为一个Future</span></span><br><span class="line">    future = convert_yielded(future)</span><br><span class="line">    <span class="comment"># 初始化一个新的Future对象</span></span><br><span class="line">    result = Future()</span><br><span class="line">    <span class="comment"># 将新的Future对象与待处理的future关联，用于超时处理、结果处理</span></span><br><span class="line">    chain_future(future, result)</span><br><span class="line">    <span class="keyword">if</span> io_loop <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">        io_loop = IOLoop.current()</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># future超时处理函数</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">error_callback</span><span class="params">(future)</span>:</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            future.result()</span><br><span class="line">        <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> isinstance(e, quiet_exceptions):</span><br><span class="line">                app_log.error(<span class="string">"Exception in Future %r after timeout"</span>,</span><br><span class="line">                              future, exc_info=<span class="keyword">True</span>)</span><br><span class="line">    <span class="comment"># IOLoop超时回调函数</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">timeout_callback</span><span class="params">()</span>:</span></span><br><span class="line">        result.set_exception(TimeoutError(<span class="string">"Timeout"</span>))</span><br><span class="line">        <span class="comment"># In case the wrapped future goes on to fail, log it.</span></span><br><span class="line">        future.add_done_callback(error_callback)</span><br><span class="line">    <span class="comment"># 添加超时事件到IOLoop</span></span><br><span class="line">    timeout_handle = io_loop.add_timeout(</span><br><span class="line">        timeout, timeout_callback)</span><br><span class="line">    <span class="comment"># 根据future不同类型，分别处理删除IOLoop中future的超时回调事件</span></span><br><span class="line">    <span class="keyword">if</span> isinstance(future, Future):</span><br><span class="line">        <span class="comment"># We know this future will resolve on the IOLoop, so we don't</span></span><br><span class="line">        <span class="comment"># need the extra thread-safety of IOLoop.add_future (and we also</span></span><br><span class="line">        <span class="comment"># don't care about StackContext here.</span></span><br><span class="line">        future.add_done_callback(</span><br><span class="line">            <span class="keyword">lambda</span> future: io_loop.remove_timeout(timeout_handle))</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="comment"># concurrent.futures.Futures may resolve on any thread, so we</span></span><br><span class="line">        <span class="comment"># need to route them back to the IOLoop.</span></span><br><span class="line">        io_loop.add_future(</span><br><span class="line">            future, <span class="keyword">lambda</span> future: io_loop.remove_timeout(timeout_handle))</span><br><span class="line">    <span class="keyword">return</span> result</span><br></pre></td></tr></table></figure></li></ul><p>首先会初始化一个Future对象，用于获取结果，即result。然后调用chain_future将future与result对象绑定，参考详解：<a href="../tornado_concurrent#chain_future">tornado concurrent解析</a>。接着会注册超时事件到IOLoop，具体参考详解：<a href="../tornado_ioloop_PeriodicCallback#add_timeout">tornado定时器PeriodicCallback解析</a>。如果timeout超时了，则IOLoop会调用timeout_callback，然后result调用set_exception抛出异常，并终止Future，即设置self._done为True；future也同样抛出异常，会将异常写入日志中。如果在timeout超时之前future操作成功完成，则会将其返回数据写到result中，并删除注册到IOLoop中的超时回调事件。</p>]]></content>
-    
-    <summary type="html">
-    
-      &lt;h2 id=&quot;tornado-gen&quot;&gt;&lt;a href=&quot;#tornado-gen&quot; class=&quot;headerlink&quot; title=&quot;tornado gen&quot;&gt;&lt;/a&gt;tornado gen&lt;/h2&gt;&lt;p&gt;tornado.gen是一个基于生成器的接口，可以更容易地在异步环境中工作。使用gen模块的代码在技术上是异步的，但它被写成一个单独的生成器，而不是另外的函数集合。&lt;/p&gt;
-    
-    </summary>
-    
-      <category term="tornado源码解析" scheme="http://yoursite.com/categories/tornado%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/"/>
-    
-    
-      <category term="tornado" scheme="http://yoursite.com/tags/tornado/"/>
-    
-      <category term="gen" scheme="http://yoursite.com/tags/gen/"/>
-    
-  </entry>
-  
-  <entry>
     <title>tornado定时器PeriodicCallback实现解析</title>
     <link href="http://yoursite.com/post/tornado-src-analysis/tornado_ioloop_PeriodicCallback/"/>
     <id>http://yoursite.com/post/tornado-src-analysis/tornado_ioloop_PeriodicCallback/</id>
@@ -92,17 +68,17 @@
   </entry>
   
   <entry>
-    <title>tornado application实现解析</title>
-    <link href="http://yoursite.com/post/tornado-src-analysis/tornado_application/"/>
-    <id>http://yoursite.com/post/tornado-src-analysis/tornado_application/</id>
-    <published>2017-11-05T16:00:00.000Z</published>
-    <updated>2018-04-02T10:37:14.000Z</updated>
+    <title>tornado gen实现解析</title>
+    <link href="http://yoursite.com/post/tornado-src-analysis/tornado_gen/"/>
+    <id>http://yoursite.com/post/tornado-src-analysis/tornado_gen/</id>
+    <published>2017-11-09T16:00:00.000Z</published>
+    <updated>2018-04-03T03:07:52.000Z</updated>
     
-    <content type="html"><![CDATA[<h2 id="tornado-application"><a href="#tornado-application" class="headerlink" title="tornado application"></a>tornado application</h2><p>tornado.web.Application继承结构为：ReversibleRouter ——&gt; Router ——&gt; httputil.HTTPServerConnectionDelegate</p><a id="more"></a>]]></content>
+    <content type="html"><![CDATA[<h2 id="tornado-gen"><a href="#tornado-gen" class="headerlink" title="tornado gen"></a>tornado gen</h2><p>tornado.gen是一个基于生成器的接口，可以更容易地在异步环境中工作。使用gen模块的代码在技术上是异步的，但它被写成一个单独的生成器，而不是另外的函数集合。</p><a id="more"></a><ul><li><p><div id="with_timeout"></div>tornado.gen.with_timeout()</p> <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">with_timeout</span><span class="params">(timeout, future, io_loop=None, quiet_exceptions=<span class="params">()</span>)</span>:</span></span><br><span class="line">    <span class="comment"># 在超时时间内封装Future对象</span></span><br><span class="line">    <span class="comment"># 如果传入的future在超时之前没有完成，则引发TimeoutError，可以通过</span></span><br><span class="line">    <span class="comment"># .IOLoop.add_timeout（即datetime.timedelta或者相对于.IOLoop.time的绝对</span></span><br><span class="line">    <span class="comment"># 时间）允许的任何形式来指定。</span></span><br><span class="line">    <span class="comment"># 如果封装的Future在超时之后失败，则将记录该异常，除非它是“quiet_exceptions”</span></span><br><span class="line">    <span class="comment"># （可能是一个异常类型或一系列类型）中包含的类型。</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 将一个yielded对象转换为一个Future</span></span><br><span class="line">    future = convert_yielded(future)</span><br><span class="line">    <span class="comment"># 初始化一个新的Future对象</span></span><br><span class="line">    result = Future()</span><br><span class="line">    <span class="comment"># 将新的Future对象与待处理的future关联，用于超时处理、结果处理</span></span><br><span class="line">    chain_future(future, result)</span><br><span class="line">    <span class="keyword">if</span> io_loop <span class="keyword">is</span> <span class="keyword">None</span>:</span><br><span class="line">        io_loop = IOLoop.current()</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># future超时处理函数</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">error_callback</span><span class="params">(future)</span>:</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            future.result()</span><br><span class="line">        <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> isinstance(e, quiet_exceptions):</span><br><span class="line">                app_log.error(<span class="string">"Exception in Future %r after timeout"</span>,</span><br><span class="line">                              future, exc_info=<span class="keyword">True</span>)</span><br><span class="line">    <span class="comment"># IOLoop超时回调函数</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">timeout_callback</span><span class="params">()</span>:</span></span><br><span class="line">        result.set_exception(TimeoutError(<span class="string">"Timeout"</span>))</span><br><span class="line">        <span class="comment"># In case the wrapped future goes on to fail, log it.</span></span><br><span class="line">        future.add_done_callback(error_callback)</span><br><span class="line">    <span class="comment"># 添加超时事件到IOLoop</span></span><br><span class="line">    timeout_handle = io_loop.add_timeout(</span><br><span class="line">        timeout, timeout_callback)</span><br><span class="line">    <span class="comment"># 根据future不同类型，分别处理删除IOLoop中future的超时回调事件</span></span><br><span class="line">    <span class="keyword">if</span> isinstance(future, Future):</span><br><span class="line">        <span class="comment"># We know this future will resolve on the IOLoop, so we don't</span></span><br><span class="line">        <span class="comment"># need the extra thread-safety of IOLoop.add_future (and we also</span></span><br><span class="line">        <span class="comment"># don't care about StackContext here.</span></span><br><span class="line">        future.add_done_callback(</span><br><span class="line">            <span class="keyword">lambda</span> future: io_loop.remove_timeout(timeout_handle))</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="comment"># concurrent.futures.Futures may resolve on any thread, so we</span></span><br><span class="line">        <span class="comment"># need to route them back to the IOLoop.</span></span><br><span class="line">        io_loop.add_future(</span><br><span class="line">            future, <span class="keyword">lambda</span> future: io_loop.remove_timeout(timeout_handle))</span><br><span class="line">    <span class="keyword">return</span> result</span><br></pre></td></tr></table></figure></li></ul><p>首先会初始化一个Future对象，用于获取结果，即result。然后调用chain_future将future与result对象绑定，参考详解：<a href="../tornado_concurrent#chain_future">tornado concurrent解析</a>。接着会注册超时事件到IOLoop，具体参考详解：<a href="../tornado_ioloop_PeriodicCallback#add_timeout">tornado定时器PeriodicCallback解析</a>。如果timeout超时了，则IOLoop会调用timeout_callback，然后result调用set_exception抛出异常，并终止Future，即设置self._done为True；future也同样抛出异常，会将异常写入日志中。如果在timeout超时之前future操作成功完成，则会将其返回数据写到result中，并删除注册到IOLoop中的超时回调事件。</p>]]></content>
     
     <summary type="html">
     
-      &lt;h2 id=&quot;tornado-application&quot;&gt;&lt;a href=&quot;#tornado-application&quot; class=&quot;headerlink&quot; title=&quot;tornado application&quot;&gt;&lt;/a&gt;tornado application&lt;/h2&gt;&lt;p&gt;tornado.web.Application继承结构为：ReversibleRouter ——&amp;gt; Router ——&amp;gt; httputil.HTTPServerConnectionDelegate&lt;/p&gt;
+      &lt;h2 id=&quot;tornado-gen&quot;&gt;&lt;a href=&quot;#tornado-gen&quot; class=&quot;headerlink&quot; title=&quot;tornado gen&quot;&gt;&lt;/a&gt;tornado gen&lt;/h2&gt;&lt;p&gt;tornado.gen是一个基于生成器的接口，可以更容易地在异步环境中工作。使用gen模块的代码在技术上是异步的，但它被写成一个单独的生成器，而不是另外的函数集合。&lt;/p&gt;
     
     </summary>
     
@@ -111,7 +87,7 @@
     
       <category term="tornado" scheme="http://yoursite.com/tags/tornado/"/>
     
-      <category term="application" scheme="http://yoursite.com/tags/application/"/>
+      <category term="gen" scheme="http://yoursite.com/tags/gen/"/>
     
   </entry>
   
@@ -136,6 +112,30 @@
       <category term="tornado" scheme="http://yoursite.com/tags/tornado/"/>
     
       <category term="iostream" scheme="http://yoursite.com/tags/iostream/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>tornado application实现解析</title>
+    <link href="http://yoursite.com/post/tornado-src-analysis/tornado_application/"/>
+    <id>http://yoursite.com/post/tornado-src-analysis/tornado_application/</id>
+    <published>2017-11-05T16:00:00.000Z</published>
+    <updated>2018-04-02T10:37:14.000Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="tornado-application"><a href="#tornado-application" class="headerlink" title="tornado application"></a>tornado application</h2><p>tornado.web.Application继承结构为：ReversibleRouter ——&gt; Router ——&gt; httputil.HTTPServerConnectionDelegate</p><a id="more"></a>]]></content>
+    
+    <summary type="html">
+    
+      &lt;h2 id=&quot;tornado-application&quot;&gt;&lt;a href=&quot;#tornado-application&quot; class=&quot;headerlink&quot; title=&quot;tornado application&quot;&gt;&lt;/a&gt;tornado application&lt;/h2&gt;&lt;p&gt;tornado.web.Application继承结构为：ReversibleRouter ——&amp;gt; Router ——&amp;gt; httputil.HTTPServerConnectionDelegate&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="tornado源码解析" scheme="http://yoursite.com/categories/tornado%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/"/>
+    
+    
+      <category term="tornado" scheme="http://yoursite.com/tags/tornado/"/>
+    
+      <category term="application" scheme="http://yoursite.com/tags/application/"/>
     
   </entry>
   
@@ -291,31 +291,6 @@
   </entry>
   
   <entry>
-    <title>tornado源码解析</title>
-    <link href="http://yoursite.com/post/tornado-src-analysis/README/"/>
-    <id>http://yoursite.com/post/tornado-src-analysis/README/</id>
-    <published>2017-08-23T16:00:00.000Z</published>
-    <updated>2018-04-03T03:06:16.000Z</updated>
-    
-    <content type="html"><![CDATA[<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>   此项目主要是针对python web框架——tornado源码相关模块进行解析，加深对web开发的理解。在详解某一模块时会引入相关基础知识概念。包括以下几个知识点：</p><ul><li><a href="../tornado_ioloop">tornado.ioloop</a><ul><li><a href="../socket">socket（TCP三次握手、四次挥手）</a></li><li><a href="../io_multiplexing">IO多路复用（select、epoll、kqueue）</a></li><li><a href="../tornado_platform_posix">tornado中对posix接口的实现</a></li><li><a href="../tornado_ioloop_PeriodicCallback">tornado定时器</a></li><li><a href="../tornado_util_configurable">tornado配置类Configurable</a></li></ul></li><li><a href="../tornado_httpserver">tornado.httpserver</a></li><li><a href="../tornado_iostream">tornado.iostream</a></li><li><a href="../tornado_http1connection">tornado.http1connection</a></li><li><a href="../tornado_concurrent">tornado.concurrent</a></li><li><a href="../tornado_gen">tornado.gen</a></li><li><a href="../tornado_application">tornado.application</a></li></ul><h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><ul><li>python 2.7</li><li>tornado 4.5.1</li><li>Ubuntu 16.04</li></ul>]]></content>
-    
-    <summary type="html">
-    
-      
-      
-        &lt;h2 id=&quot;简介&quot;&gt;&lt;a href=&quot;#简介&quot; class=&quot;headerlink&quot; title=&quot;简介&quot;&gt;&lt;/a&gt;简介&lt;/h2&gt;&lt;p&gt;   此项目主要是针对python web框架——tornado源码相关模块进行解析，加深对web开发的理解。在详解某一模块时会引入相关基础
-      
-    
-    </summary>
-    
-      <category term="tornado源码解析" scheme="http://yoursite.com/categories/tornado%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/"/>
-    
-    
-      <category term="tornado" scheme="http://yoursite.com/tags/tornado/"/>
-    
-  </entry>
-  
-  <entry>
     <title>tornado ioloop实现解析</title>
     <link href="http://yoursite.com/post/tornado-src-analysis/tornado_ioloop/"/>
     <id>http://yoursite.com/post/tornado-src-analysis/tornado_ioloop/</id>
@@ -340,6 +315,31 @@
       <category term="tornado" scheme="http://yoursite.com/tags/tornado/"/>
     
       <category term="ioloop" scheme="http://yoursite.com/tags/ioloop/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>tornado源码解析</title>
+    <link href="http://yoursite.com/post/tornado-src-analysis/README/"/>
+    <id>http://yoursite.com/post/tornado-src-analysis/README/</id>
+    <published>2017-08-23T16:00:00.000Z</published>
+    <updated>2018-04-03T03:06:16.000Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>   此项目主要是针对python web框架——tornado源码相关模块进行解析，加深对web开发的理解。在详解某一模块时会引入相关基础知识概念。包括以下几个知识点：</p><ul><li><a href="../tornado_ioloop">tornado.ioloop</a><ul><li><a href="../socket">socket（TCP三次握手、四次挥手）</a></li><li><a href="../io_multiplexing">IO多路复用（select、epoll、kqueue）</a></li><li><a href="../tornado_platform_posix">tornado中对posix接口的实现</a></li><li><a href="../tornado_ioloop_PeriodicCallback">tornado定时器</a></li><li><a href="../tornado_util_configurable">tornado配置类Configurable</a></li></ul></li><li><a href="../tornado_httpserver">tornado.httpserver</a></li><li><a href="../tornado_iostream">tornado.iostream</a></li><li><a href="../tornado_http1connection">tornado.http1connection</a></li><li><a href="../tornado_concurrent">tornado.concurrent</a></li><li><a href="../tornado_gen">tornado.gen</a></li><li><a href="../tornado_application">tornado.application</a></li></ul><h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><ul><li>python 2.7</li><li>tornado 4.5.1</li><li>Ubuntu 16.04</li></ul>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;简介&quot;&gt;&lt;a href=&quot;#简介&quot; class=&quot;headerlink&quot; title=&quot;简介&quot;&gt;&lt;/a&gt;简介&lt;/h2&gt;&lt;p&gt;   此项目主要是针对python web框架——tornado源码相关模块进行解析，加深对web开发的理解。在详解某一模块时会引入相关基础
+      
+    
+    </summary>
+    
+      <category term="tornado源码解析" scheme="http://yoursite.com/categories/tornado%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/"/>
+    
+    
+      <category term="tornado" scheme="http://yoursite.com/tags/tornado/"/>
     
   </entry>
   
